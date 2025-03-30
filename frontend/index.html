@@ -73,8 +73,43 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       font-size: 14px;
       color: var(--text-secondary);
-      z-index: 1000;
+      z-index: 400;
       transition: all 0.2s ease;
+    }
+
+    .update-timer {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-size: 14px;
+      color: var(--text-secondary);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .update-timer .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border-color);
+      border-top: 2px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .update-timer.updating {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .update-timer.updating .spinner {
+      border-color: rgba(255,255,255,0.3);
+      border-top-color: white;
     }
 
     .map-status.active {
@@ -194,6 +229,8 @@
       margin-bottom: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      position: relative;
+      z-index: 500;
     }
 
     .title h1 {
@@ -303,6 +340,10 @@
 
   <div id="map"></div>
   <div id="mapStatus" class="map-status">Click on the map to set start point</div>
+  <div id="updateTimer" class="update-timer">
+    <div class="spinner"></div>
+    <span>Next update in: <span id="countdown">5:00</span></span>
+  </div>
   
   <div id="controls">
     <div class="controls-container">
@@ -341,6 +382,10 @@
     let destMarker = null;
     let isSettingStart = true;
     let routeLine = null;
+    let previewLine = null;
+    let shadowLayer = null;
+    let updateInterval = null;
+    let countdownInterval = null;
 
     document.getElementById("shadeSlider").addEventListener("input", (e) => {
       document.getElementById("shadeValue").innerText = e.target.value;
@@ -350,13 +395,22 @@
       if (startMarker) map.removeLayer(startMarker);
       if (destMarker) map.removeLayer(destMarker);
       if (routeLine) map.removeLayer(routeLine);
+      if (previewLine) map.removeLayer(previewLine);
       startMarker = null;
       destMarker = null;
       routeLine = null;
+      previewLine = null;
       isSettingStart = true;
       document.getElementById("calculateBtn").disabled = true;
       document.getElementById("mapStatus").classList.remove("active");
       document.getElementById("mapStatus").textContent = "Click on the map to set start point";
+      document.getElementById("routeInfo").classList.remove("active");
+      document.getElementById("routeDistance").textContent = "-";
+      document.getElementById("routeTime").textContent = "-";
+      document.getElementById("shadeCoverage").textContent = "-";
+      map.getContainer().classList.remove("has-start");
+      map.getContainer().removeAttribute("data-distance");
+      clearIntervals();
     }
 
     map.on("click", (e) => {
@@ -419,14 +473,23 @@
       }
     }
 
-    // 🌓 Load and draw shadow polygons from backend
-    async function loadShadows() {
+    // Function to update shadows
+    async function updateShadows() {
+      const updateTimer = document.getElementById("updateTimer");
+      updateTimer.classList.add("updating");
+      
       try {
         const res = await fetch("http://127.0.0.1:5000/shadows");
         const data = await res.json();
         const geojson = JSON.parse(data.shadows);
 
-        L.geoJSON(geojson, {
+        // Remove existing shadow layer
+        if (shadowLayer) {
+          map.removeLayer(shadowLayer);
+        }
+
+        // Add new shadow layer
+        shadowLayer = L.geoJSON(geojson, {
           style: {
             color: "transparent",
             weight: 0,
@@ -434,16 +497,59 @@
             fillOpacity: 0.2
           }
         }).addTo(map);
+
+        // Reset countdown
+        startCountdown();
       } catch (err) {
-        console.error("❌ Failed to load shadows:", err);
+        console.error("❌ Failed to update shadows:", err);
+      } finally {
+        updateTimer.classList.remove("updating");
       }
     }
 
-    // Load shadows on map load
+    // Function to start countdown
+    function startCountdown() {
+      let timeLeft = 300; // 5 minutes in seconds
+      const countdownElement = document.getElementById("countdown");
+      const updateTimer = document.getElementById("updateTimer");
+
+      // Clear existing interval if any
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+
+      // Update countdown every second
+      countdownInterval = setInterval(() => {
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // When countdown reaches 0, update shadows
+        if (timeLeft <= 0) {
+          updateShadows();
+        }
+      }, 1000);
+    }
+
+    // Function to clear all intervals
+    function clearIntervals() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+    }
+
+    // Start initial shadow load and countdown
     window.addEventListener("load", () => {
-      loadShadows();
+      updateShadows();
       document.getElementById("calculateBtn").disabled = true;
     });
+
+    // Clean up intervals when page is unloaded
+    window.addEventListener("unload", clearIntervals);
 
     // Marker icons
     const greenIcon = new L.Icon({
