@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
   <style>
     :root {
       --primary-color: #2563eb;
@@ -334,235 +335,48 @@
   <div class="title">
     <h1>Shadow Route Planner</h1>
     <div class="description">
-      Find the most comfortable walking route based on shade coverage. Click to set start and end points, then calculate your route.
+      Find the optimal walking route based on sun exposure and shadow coverage
     </div>
   </div>
 
   <div id="map"></div>
-  <div id="mapStatus" class="map-status">Click on the map to set start point</div>
-  <div id="updateTimer" class="update-timer">
+
+  <div class="loading-spinner">
     <div class="spinner"></div>
-    <span>Next update in: <span id="countdown">5:00</span></span>
+    <div class="message">Loading...</div>
   </div>
-  
+
+  <div class="error-message"></div>
+
   <div id="controls">
     <div class="controls-container">
       <div class="control-group">
+        <button class="set-points-button" onclick="window.mapManager.togglePointSetting()">
+          Set Points
+        </button>
+        <div class="point-status">Click on the map to set start and end points</div>
+      </div>
+
+      <div class="control-group">
         <div class="slider-container">
-          <label>Shade Preference:</label>
-          <input type="range" id="shadeSlider" min="0.1" max="10" value="1" step="0.1" />
+          <span>Shade Preference:</span>
+          <input type="range" 
+                 min="0.1" 
+                 max="10" 
+                 step="0.1" 
+                 value="1" 
+                 oninput="this.nextElementSibling.value = this.value; window.mapManager.setShadeWeight(this.value)">
           <span id="shadeValue">1.0</span>
         </div>
       </div>
 
-      <div class="control-group">
-        <button onclick="getRoute()" id="calculateBtn">
-          <span>🧭</span> Calculate Route
-        </button>
-        <button onclick="clearMap()" style="background: var(--danger-color);">
-          <span>🗑️</span> Clear Map
-        </button>
+      <div id="routeInfo" class="control-group">
+        <!-- Route information will be displayed here -->
       </div>
-    </div>
-
-    <div class="loading" id="loading">
-      <div class="spinner"></div>
-      Calculating your route...
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([31.2639, 34.8035], 16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    let startMarker = null;
-    let destMarker = null;
-    let isSettingStart = true;
-    let routeLine = null;
-    let previewLine = null;
-    let shadowLayer = null;
-    let updateInterval = null;
-    let countdownInterval = null;
-
-    document.getElementById("shadeSlider").addEventListener("input", (e) => {
-      document.getElementById("shadeValue").innerText = e.target.value;
-    });
-
-    function clearMap() {
-      if (startMarker) map.removeLayer(startMarker);
-      if (destMarker) map.removeLayer(destMarker);
-      if (routeLine) map.removeLayer(routeLine);
-      if (previewLine) map.removeLayer(previewLine);
-      startMarker = null;
-      destMarker = null;
-      routeLine = null;
-      previewLine = null;
-      isSettingStart = true;
-      document.getElementById("calculateBtn").disabled = true;
-      document.getElementById("mapStatus").classList.remove("active");
-      document.getElementById("mapStatus").textContent = "Click on the map to set start point";
-      document.getElementById("routeInfo").classList.remove("active");
-      document.getElementById("routeDistance").textContent = "-";
-      document.getElementById("routeTime").textContent = "-";
-      document.getElementById("shadeCoverage").textContent = "-";
-      map.getContainer().classList.remove("has-start");
-      map.getContainer().removeAttribute("data-distance");
-      clearIntervals();
-    }
-
-    map.on("click", (e) => {
-      if (isSettingStart) {
-        if (startMarker) map.removeLayer(startMarker);
-        startMarker = L.marker(e.latlng, { icon: greenIcon }).addTo(map).bindPopup("Start Point").openPopup();
-        document.getElementById("mapStatus").classList.add("active");
-        document.getElementById("mapStatus").textContent = "Now click to set end point";
-        isSettingStart = false;
-      } else {
-        if (destMarker) map.removeLayer(destMarker);
-        destMarker = L.marker(e.latlng, { icon: redIcon }).addTo(map).bindPopup("Destination").openPopup();
-        document.getElementById("mapStatus").classList.remove("active");
-        document.getElementById("mapStatus").textContent = "Click on the map to set start point";
-        isSettingStart = true;
-        document.getElementById("calculateBtn").disabled = false;
-      }
-    });
-
-    async function getRoute() {
-      if (!startMarker || !destMarker) {
-        alert("Please select both start and destination points first.");
-        return;
-      }
-
-      const start = [startMarker.getLatLng().lat, startMarker.getLatLng().lng];
-      const dest = [destMarker.getLatLng().lat, destMarker.getLatLng().lng];
-      const shade_weight = parseFloat(document.getElementById("shadeSlider").value);
-
-      const loading = document.getElementById("loading");
-      const calculateBtn = document.getElementById("calculateBtn");
-      
-      loading.classList.add("active");
-      calculateBtn.disabled = true;
-
-      try {
-        const res = await fetch("http://127.0.0.1:5000/route", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ start, dest, shade_weight })
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Route calculation failed.");
-        }
-
-        const data = await res.json();
-
-        if (routeLine) map.removeLayer(routeLine);
-        const latlngs = data.route.map(([lat, lon]) => [lat, lon]);
-        routeLine = L.polyline(latlngs, { color: '#2563eb', weight: 4, opacity: 0.8 }).addTo(map);
-        map.fitBounds(routeLine.getBounds());
-      } catch (err) {
-        alert("Error: " + err.message);
-        console.error(err);
-      } finally {
-        loading.classList.remove("active");
-        calculateBtn.disabled = false;
-      }
-    }
-
-    // Function to update shadows
-    async function updateShadows() {
-      const updateTimer = document.getElementById("updateTimer");
-      updateTimer.classList.add("updating");
-      
-      try {
-        const res = await fetch("http://127.0.0.1:5000/shadows");
-        const data = await res.json();
-        const geojson = JSON.parse(data.shadows);
-
-        // Remove existing shadow layer
-        if (shadowLayer) {
-          map.removeLayer(shadowLayer);
-        }
-
-        // Add new shadow layer
-        shadowLayer = L.geoJSON(geojson, {
-          style: {
-            color: "transparent",
-            weight: 0,
-            fillColor: "#1e293b",
-            fillOpacity: 0.2
-          }
-        }).addTo(map);
-
-        // Reset countdown
-        startCountdown();
-      } catch (err) {
-        console.error("❌ Failed to update shadows:", err);
-      } finally {
-        updateTimer.classList.remove("updating");
-      }
-    }
-
-    // Function to start countdown
-    function startCountdown() {
-      let timeLeft = 300; // 5 minutes in seconds
-      const countdownElement = document.getElementById("countdown");
-      const updateTimer = document.getElementById("updateTimer");
-
-      // Clear existing interval if any
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-      }
-
-      // Update countdown every second
-      countdownInterval = setInterval(() => {
-        timeLeft--;
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        // When countdown reaches 0, update shadows
-        if (timeLeft <= 0) {
-          updateShadows();
-        }
-      }, 1000);
-    }
-
-    // Function to clear all intervals
-    function clearIntervals() {
-      if (updateInterval) {
-        clearInterval(updateInterval);
-      }
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-      }
-    }
-
-    // Start initial shadow load and countdown
-    window.addEventListener("load", () => {
-      updateShadows();
-      document.getElementById("calculateBtn").disabled = true;
-    });
-
-    // Clean up intervals when page is unloaded
-    window.addEventListener("unload", clearIntervals);
-
-    // Marker icons
-    const greenIcon = new L.Icon({
-      iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-    });
-
-    const redIcon = new L.Icon({
-      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-    });
-  </script>
+  <script src="js/map.js"></script>
 </body>
 </html>

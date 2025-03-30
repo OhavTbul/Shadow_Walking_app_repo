@@ -94,9 +94,9 @@ class Class_Shadow:
             elif combined_polygon.geom_type == 'MultiPolygon':
                 # If there are multiple polygons, iterate and remove holes from each
                 filled_polygons = []
-                for poly in combined_polygon:
+                for poly in combined_polygon.geoms:
                     filled_polygons.append(Polygon(poly.exterior))
-                filled_polygon = gpd.GeoSeries(filled_polygons).unary_union
+                filled_polygon = unary_union(filled_polygons)
             return filled_polygon
         else:
             raise ValueError(f"Invalid geometry type for footprint: {type(footprint)}")
@@ -275,7 +275,7 @@ class Class_Shadow:
         # Step 8: Output the results for each path
         for u, v, key, data in G.edges(keys=True, data=True):
             coverage = data.get('shadow_coverage', 0)
-            print(f"Edge {u}-{v}: {coverage:.2f}% covered by shadow/buildings")
+            #print(f"Edge {u}-{v}: {coverage:.2f}% covered by shadow/buildings")
 
         # Adding numeric house number labels to buildings if available
         for idx, building in buildings.iterrows():
@@ -326,7 +326,7 @@ class Class_Shadow:
             i = 1
             for d in delta:
                 new_distance_shadow = distance_shadow / d
-                print(f"new_distance_shadow: {new_distance_shadow}\n")
+                #print(f"new_distance_shadow: {new_distance_shadow}\n")
                 d_name = f"cost_{i}"
                 i = i + 1
                 distance_sun = total_path_length - distance_shadow

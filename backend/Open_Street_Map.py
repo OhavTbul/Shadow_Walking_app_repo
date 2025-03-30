@@ -57,14 +57,14 @@ class Open_Street_Map:
             self.Buildings['levels'] = pd.to_numeric(self.Buildings['building:levels'], errors='coerce')
         else:
             self.Buildings['levels'] = None
-        print(self.Buildings['building:levels'])
-        print(f"height : {self.Buildings['height']}")
+        #print(self.Buildings['building:levels'])
+        #print(f"height : {self.Buildings['height']}")
 
         # If building has levels, calculate height as levels * 2.7
         self.Buildings['height'] = self.Buildings.apply(
             lambda row: row['levels'] * floor_high if pd.notna(row['levels']) else row['height'], axis=1
         )
-        print(f"height : {self.Buildings['height']}")
+        #print(f"height : {self.Buildings['height']}")
 
         # Set height to 0 if it is still missing
         self.Buildings['height'].fillna(0, inplace=True)
