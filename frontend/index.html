@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Shadow Route Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+
+    #map {
+      height: 90%;
+    }
+
+    #controls {
+      height: 10%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: #f0f0f0;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+
+    input[type=range] {
+      width: 150px;
+    }
+
+    button {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+  <div id="controls">
+    <button onclick="setStart()">🟢 Start</button>
+    <button onclick="setDest()">🔴 End</button>
+
+    <label>
+      Shade Preference:
+      <input type="range" id="shadeSlider" min="0.1" max="10" value="1" step="0.1" />
+      <span id="shadeValue">1.0</span>
+    </label>
+
+    <button onclick="getRoute()">🧭 Calculate Route</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([31.2639, 34.8035], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let startMarker = null;
+    let destMarker = null;
+    let drawMode = null;
+    let routeLine = null;
+
+    document.getElementById("shadeSlider").addEventListener("input", (e) => {
+      document.getElementById("shadeValue").innerText = e.target.value;
+    });
+
+    function setStart() {
+      drawMode = "start";
+    }
+
+    function setDest() {
+      drawMode = "dest";
+    }
+
+    map.on("click", (e) => {
+      if (drawMode === "start") {
+        if (startMarker) map.removeLayer(startMarker);
+        startMarker = L.marker(e.latlng, { icon: greenIcon }).addTo(map).bindPopup("Start").openPopup();
+        drawMode = null;
+      } else if (drawMode === "dest") {
+        if (destMarker) map.removeLayer(destMarker);
+        destMarker = L.marker(e.latlng, { icon: redIcon }).addTo(map).bindPopup("Destination").openPopup();
+        drawMode = null;
+      }
+    });
+
+    async function getRoute() {
+      if (!startMarker || !destMarker) {
+        alert("Please select both start and destination.");
+        return;
+      }
+
+      const start = [startMarker.getLatLng().lat, startMarker.getLatLng().lng];
+      const dest = [destMarker.getLatLng().lat, destMarker.getLatLng().lng];
+      const shade_weight = parseFloat(document.getElementById("shadeSlider").value);
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/route", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ start, dest, shade_weight })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Route calculation failed.");
+        }
+
+        const data = await res.json();
+
+        if (routeLine) map.removeLayer(routeLine);
+        const latlngs = data.route.map(([lat, lon]) => [lat, lon]);
+        routeLine = L.polyline(latlngs, { color: 'red' }).addTo(map);
+        map.fitBounds(routeLine.getBounds());
+      } catch (err) {
+        alert("Error: " + err.message);
+        console.error(err);
+      }
+    }
+
+    // 🌓 Load and draw shadow polygons from backend
+    async function loadShadows() {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/shadows");
+        const data = await res.json();
+        const geojson = JSON.parse(data.shadows);
+
+        L.geoJSON(geojson, {
+          style: {
+            color: "black",
+            weight: 0,
+            fillColor: "rgba(0, 0, 0, 0.4)",
+            fillOpacity: 0.4
+          }
+        }).addTo(map);
+      } catch (err) {
+        console.error("❌ Failed to load shadows:", err);
+      }
+    }
+
+    // Load shadows on map load
+    window.addEventListener("load", () => {
+      loadShadows();
+    });
+
+    // Marker icons
+    const greenIcon = new L.Icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
+
+    const redIcon = new L.Icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
+  </script>
+</body>
+</html>
