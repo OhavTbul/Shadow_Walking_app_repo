@@ -132,6 +132,12 @@ def get_shadows():
         return jsonify({"error": ERROR_MESSAGES["SERVER_ERROR"]}), 500
 
 def make_new_weights(G, delta):
+    # Clear any existing new_weights
+    for u, v, key, edge in G.edges(keys=True, data=True):
+        if "new_weights" in edge:
+            del edge["new_weights"]
+    
+    # Calculate new weights
     for u, v, key, edge in G.edges(keys=True, data=True):
         coverage = edge.get('shadow_coverage', 0)
         path = edge.get('geometry')

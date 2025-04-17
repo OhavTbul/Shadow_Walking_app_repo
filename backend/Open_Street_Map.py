@@ -1,4 +1,3 @@
-
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
@@ -18,7 +17,7 @@ class Open_Street_Map:
         G = ox.graph_from_place(place_name, network_type="walk", custom_filter=custom_filter, retain_all=True)
         G = ox.project_graph(G, to_crs=self.crs)
         self.G = G
-        self.Buildings = ox.features_from_place(place_name, tags={"building": True})
+        self.Buildings = ox.geometries_from_place(place_name, tags={"building": True})
         self.calculate_high()
         self.handel_bad_path()
         self.buildings_with_only_shadows = None

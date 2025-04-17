@@ -51,6 +51,10 @@ python Flask_app.py
 1. Open `frontend/index.html` in a web browser
 2. No additional setup required as it's a static application
 
+###open the web
+1. cd /Users/iluski/Desktop/shadow_walk_app/Shadow_Walking_app_repo && pwd
+2.open frontend/index.html
+
 ## API Endpoints
 
 ### POST /route

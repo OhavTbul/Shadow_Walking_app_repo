@@ -4,9 +4,11 @@
   <meta charset="utf-8" />
   <title>Shadow Route Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css' rel='stylesheet' />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/comparison.css" />
+  <script src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js'></script>
   <style>
     :root {
       --primary-color: #2563eb;
@@ -234,6 +236,20 @@
       z-index: 500;
     }
 
+    .title-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+
+    .bgu-logo {
+      height: 60px;
+      width: auto;
+      object-fit: contain;
+    }
+
     .title h1 {
       margin: 0;
       font-size: 28px;
@@ -329,11 +345,36 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
+
+    .map-style-select {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: white;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 120px;
+    }
+
+    .map-style-select:hover {
+      border-color: var(--primary-color);
+    }
+
+    .map-style-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
   </style>
 </head>
 <body>
   <div class="title">
-    <h1>Shadow Route Planner</h1>
+    <div class="title-content">
+      <img src="assets/bgu-logo.png" alt="Ben-Gurion University Logo" class="bgu-logo">
+      <h1>Shadow Route Planner</h1>
+    </div>
     <div class="description">
       Find the optimal walking route based on sun exposure and shadow coverage
     </div>
@@ -358,6 +399,12 @@
       </div>
 
       <div class="control-group">
+        <button class="compare-routes-button" onclick="window.mapManager.startRouteComparison()">
+          Compare Routes
+        </button>
+      </div>
+
+      <div class="control-group">
         <div class="slider-container">
           <span>Shade Preference:</span>
           <input type="range" 
@@ -370,13 +417,22 @@
         </div>
       </div>
 
+      <div class="control-group">
+        <select id="mapStyle" onchange="window.mapManager.changeMapStyle(this.value)" class="map-style-select">
+          <option value="streets">Streets</option>
+          <option value="satellite">Satellite</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="terrain">Terrain</option>
+          <option value="basic">Basic</option>
+        </select>
+      </div>
+
       <div id="routeInfo" class="control-group">
         <!-- Route information will be displayed here -->
       </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="js/map.js"></script>
 </body>
 </html>
