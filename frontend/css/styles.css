@@ -329,4 +329,119 @@ input[type=range]::-webkit-slider-thumb:hover {
     input[type=range] {
         flex: 1;
     }
-} 
+}
+.bgu-logo {
+  height: 40px; /* במקום 60px */
+  width: auto;
+  object-fit: contain;
+}
+
+/* ואם רוצים שזה ייראה מעולה גם במסכים ממש קטנים */
+@media (max-width: 600px) {
+  .bgu-logo {
+    height: 30px;
+  }
+}
+
+
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.auth-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 350px;
+  text-align: center;
+}
+
+.auth-card h2 {
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: var(--primary-color);
+}
+
+.auth-card form {
+  margin-bottom: 20px;
+}
+
+.auth-card input {
+  width: 90%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.auth-card button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+#message {
+  margin-top: 10px;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.auth-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  background: var(--background);
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.tab-button.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.tab-button:hover {
+  background: var(--primary-hover);
+  color: white;
+}
+
+#loginForm, #registerForm {
+  transition: opacity 0.3s ease;
+}
+
+/* bigger, centered greeting in the top bar */
+.top-bar {
+  display: none;            /* still hidden until login */
+  justify-content: center;  /* center its contents horizontally */
+  align-items: center;      /* center vertically */
+  font-size: 1.25rem;       /* bump up the text size */
+  padding: 1rem 0;          /* some vertical breathing room */
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-bar button {
+  margin-left: 1rem;        /* separate the Logout button slightly */
+  font-size: 1rem;          /* make the button text a bit bigger */
+  padding: 0.5rem 1rem;
+}
+
+
+
+

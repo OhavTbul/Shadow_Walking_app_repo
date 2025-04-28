@@ -370,6 +370,8 @@
   </style>
 </head>
 <body>
+
+
   <div class="title">
     <div class="title-content">
       <img src="assets/bgu-logo.png" alt="Ben-Gurion University Logo" class="bgu-logo">
@@ -377,6 +379,34 @@
     </div>
     <div class="description">
       Find the optimal walking route based on sun exposure and shadow coverage
+    </div>
+  </div>
+
+   <!-- Top bar (hidden until login) -->
+  <div class="top-bar" id="topBar" style="display:none;"></div>
+
+  <!-- Auth card -->
+  <div class="auth-container" id="authContainer">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button id="loginTab" class="tab-button active" onclick="showLogin()">Login</button>
+        <button id="registerTab" class="tab-button" onclick="showRegister()">Register</button>
+      </div>
+      <form id="loginForm">
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="Email" required><br>
+        <input type="password" id="loginPassword" placeholder="Password" required><br>
+        <button type="submit">Login</button>
+      </form>
+      <form id="registerForm" style="display:none;">
+        <h2>Register</h2>
+        <input type="text" id="regFirstName" placeholder="First Name" required><br>
+        <input type="text" id="regLastName" placeholder="Last Name" required><br>
+        <input type="email" id="regEmail" placeholder="Email" required><br>
+        <input type="password" id="regPassword" placeholder="Password" required><br>
+        <button type="submit">Register</button>
+      </form>
+      <div id="message"></div>
     </div>
   </div>
 
@@ -407,11 +437,11 @@
       <div class="control-group">
         <div class="slider-container">
           <span>Shade Preference:</span>
-          <input type="range" 
-                 min="0.1" 
-                 max="10" 
-                 step="0.1" 
-                 value="1" 
+          <input type="range"
+                 min="0.1"
+                 max="10"
+                 step="0.1"
+                 value="1"
                  oninput="this.nextElementSibling.value = this.value; window.mapManager.setShadeWeight(this.value)">
           <span id="shadeValue">1.0</span>
         </div>
@@ -434,5 +464,101 @@
   </div>
 
   <script src="js/map.js"></script>
+<!-- Authentication scripts -->
+<script>
+  // 1) תפסי את האלמנטים
+  const loginForm      = document.getElementById('loginForm');
+  const registerForm   = document.getElementById('registerForm');
+  const loginTab       = document.getElementById('loginTab');
+  const registerTab    = document.getElementById('registerTab');
+  const authContainer  = document.getElementById('authContainer');
+  const topBar         = document.getElementById('topBar');
+  const messageDiv     = document.getElementById('message');
+
+  // 2) הגדרי אותם כגלובליים (או פשוט בלי inline onclick)
+  window.showLogin = function() {
+    loginForm.style.display    = 'block';
+    registerForm.style.display = 'none';
+    loginTab.classList.add('active');
+    registerTab.classList.remove('active');
+  };
+  window.showRegister = function() {
+    loginForm.style.display    = 'none';
+    registerForm.style.display = 'block';
+    loginTab.classList.remove('active');
+    registerTab.classList.add('active');
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Auto-login
+    const u = JSON.parse(sessionStorage.getItem('currentUser'));
+    if (u) loginSuccess(u.firstName);
+
+    // 3) קישור מאזיני טפסים
+    registerForm.addEventListener('submit', registerUser);
+    loginForm   .addEventListener('submit', loginUser);
+  });
+
+  // 4) Handlers
+  async function registerUser(e) {
+    e.preventDefault();
+    console.log('registerUser called');              // בדיקה
+    const body = {
+      first_name: regFirstName.value.trim(),
+      last_name:  regLastName.value.trim(),
+      email:      regEmail.value.trim(),
+      password:   regPassword.value.trim()
+    };
+    const res = await fetch('/register', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+    console.log('register response:', res.status);   // בדיקה
+    const d = await res.json();
+    if (!res.ok) return showMessage(d.error, true);
+    sessionStorage.setItem('currentUser', JSON.stringify({ firstName: d.first_name }));
+    loginSuccess(d.first_name);
+  }
+
+  async function loginUser(e) {
+    e.preventDefault();
+    console.log('loginUser called');                 // בדיקה
+    const body = {
+      email:    loginEmail.value.trim(),
+      password: loginPassword.value.trim()
+    };
+    const res = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+    console.log('login response:', res.status);      // בדיקה
+    const d = await res.json();
+    if (!res.ok) return showMessage(d.error, true);
+    sessionStorage.setItem('currentUser', JSON.stringify({ firstName: d.first_name }));
+    loginSuccess(d.first_name);
+  }
+
+  function showMessage(msg, isErr) {
+    messageDiv.style.color = isErr ? 'red' : 'green';
+    messageDiv.innerText   = msg;
+  }
+
+ function loginSuccess(firstName) {
+  authContainer.style.display = 'none';
+  topBar.style.display       = 'flex';
+  topBar.innerHTML           = `
+    שלום, <span style="color:var(--primary-color)">${firstName}</span>!
+    <button onclick="logout()">Logout</button>`;
+}
+
+  function logout() {
+    sessionStorage.removeItem('currentUser');
+    location.reload();
+  }
+</script>
+
+
 </body>
 </html>

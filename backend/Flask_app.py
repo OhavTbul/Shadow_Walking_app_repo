@@ -1,11 +1,15 @@
 # backend/app.py
 
+import os
+import sys
+import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import osmnx as ox
 import networkx as nx
 import geopandas as gpd
 from pyproj import Transformer
+
 from SunLocation import SunLocation
 from Open_Street_Map import Open_Street_Map
 from Class_Shadow import Class_Shadow
@@ -16,12 +20,37 @@ from config import (
     ERROR_MESSAGES,
     CORS_ORIGINS
 )
-import os
 
-app = Flask(__name__)
-# Configure logging to only show errors
+# ── Paths & users file ─────────────────────────────────────────────────────────
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR  = os.path.normpath(os.path.join(BASE_DIR, os.pardir, 'frontend'))
+USERS_FILE    = os.path.join(BASE_DIR, 'users.json')
+
+# ── initialize Flask only once ────────────────────────────────────────────────
+app = Flask(
+    __name__,
+    static_folder=FRONTEND_DIR,
+    static_url_path=''    # serve everything else as static files
+)
 app.logger.setLevel('ERROR')
 CORS(app, origins=CORS_ORIGINS)
+
+def load_users():
+    try:
+        with open(USERS_FILE, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+def save_users(users):
+    with open(USERS_FILE, 'w') as f:
+        json.dump(users, f, indent=2)
+
+# ── Serve your SPA ─────────────────────────────────────────────────────────────
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    return app.send_static_file(path)
 
 # Load once
 sunloc = SunLocation()
@@ -39,10 +68,12 @@ osm.Buildings['shadow_geometry'] = osm.Buildings.apply(
 shadow_gdf = gpd.GeoDataFrame(osm.Buildings, geometry='shadow_geometry').set_crs(epsg=32636)
 # Disable print output from analyze_coverage
 import sys
+
 original_stdout = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 Class_Shadow.analyze_coverage(osm.G, shadow_gdf, osm.Buildings, osm.combined_bounds, False)
 sys.stdout = original_stdout
+
 
 def validate_coordinates(coord):
     """Validate coordinate format and range."""
@@ -51,6 +82,7 @@ def validate_coordinates(coord):
     lat, lon = coord
     return -90 <= lat <= 90 and -180 <= lon <= 180
 
+
 def validate_shade_weight(weight):
     """Validate shade weight is within acceptable range."""
     try:
@@ -58,6 +90,7 @@ def validate_shade_weight(weight):
         return API_CONFIG["MIN_SHADE_WEIGHT"] <= weight <= API_CONFIG["MAX_SHADE_WEIGHT"]
     except (ValueError, TypeError):
         return False
+
 
 @app.route("/route", methods=["POST"])
 @cross_origin()
@@ -74,7 +107,7 @@ def route():
         # Input validation
         if not all(validate_coordinates(coord) for coord in [start, dest]):
             return jsonify({"error": ERROR_MESSAGES["INVALID_COORDINATES"]}), 400
-        
+
         if not validate_shade_weight(weight):
             return jsonify({"error": ERROR_MESSAGES["INVALID_SHADE_WEIGHT"]}), 400
 
@@ -115,6 +148,7 @@ def route():
         app.logger.error(f"Error in /route endpoint: {str(e)}")
         return jsonify({"error": ERROR_MESSAGES["SERVER_ERROR"]}), 500
 
+
 @app.route("/shadows", methods=["GET"])
 @cross_origin()
 def get_shadows():
@@ -131,12 +165,13 @@ def get_shadows():
         app.logger.error(f"Error in /shadows route: {str(e)}")
         return jsonify({"error": ERROR_MESSAGES["SERVER_ERROR"]}), 500
 
+
 def make_new_weights(G, delta):
     # Clear any existing new_weights
     for u, v, key, edge in G.edges(keys=True, data=True):
         if "new_weights" in edge:
             del edge["new_weights"]
-    
+
     # Calculate new weights
     for u, v, key, edge in G.edges(keys=True, data=True):
         coverage = edge.get('shadow_coverage', 0)
@@ -146,6 +181,56 @@ def make_new_weights(G, delta):
         new_distance_shadow = distance_shadow / delta
         distance_sun = total_path_length - distance_shadow
         G[u][v][key]["new_weights"] = distance_sun + new_distance_shadow
+
+
+# ── /register endpoint ─────────────────────────────────────────────────────────
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json() or {}
+    # ensure all fields present
+    for field in ('email','password','first_name','last_name'):
+        if not data.get(field):
+            return jsonify({'error': 'Missing fields'}), 400
+
+    users = load_users()
+    # duplicate email?
+    if any(u['email'] == data['email'] for u in users):
+        return jsonify({'error': 'Email already registered'}), 409
+
+    new_user = {
+        'email':      data['email'],
+        'password':   data['password'],    # TODO: hash before saving
+        'first_name': data['first_name'],
+        'last_name':  data['last_name'],
+    }
+    users.append(new_user)
+    save_users(users)
+    return jsonify({'message': 'OK', 'first_name': new_user['first_name']}), 201
+
+# ── /login endpoint ────────────────────────────────────────────────────────────
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json() or {}
+    email = data.get('email')
+    password = data.get('password')
+    if not email or not password:
+        return jsonify({'error': 'Missing fields'}), 400
+
+    users = load_users()
+    # First, try to find a user with that email
+    user = next((u for u in users if u['email'] == email), None)
+    if not user:
+        # email not in our users.json
+        return jsonify({'error': 'Email not registered'}), 404
+
+    # email exists, now check password
+    if user['password'] != password:
+        return jsonify({'error': 'Incorrect password'}), 401
+
+    # success!
+    return jsonify({'message': 'OK', 'first_name': user['first_name']}), 200
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=8001)
