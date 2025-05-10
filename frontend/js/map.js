@@ -1,51 +1,62 @@
 class MapManager {
     constructor() {
         this.map = null;
-        this.routeLayer = null;
-        this.shadowLayer = null;
         this.startMarker = null;
         this.endMarker = null;
+        this.startPointCoords = null;
+        this.endPointCoords = null;
         this.isSettingPoints = false;
+        this.shadowRefreshInterval = null;
+        this.shadowRefreshRate = 15 * 60 * 1000;
+        this.lastShadowUpdateTime = null;
         this.currentPoint = 'start';
         this.shadeWeight = 1.0;
-        this.lastShadowsData = null;
+        this.lastShadowsData = null; // ישמש לשמירת הצללים האחרונים שנטענו (בין אם עתידיים או נוכחיים)
         this.lastRouteData = null;
         this.routeCalculationTimeout = null;
-        this.comparisonRoutes = []; // Store multiple routes for comparison
+        this.comparisonRoutes = [];
         this.currentComparisonIndex = 0;
         this.mapStyles = {
             streets: 'https://api.maptiler.com/maps/streets/style.json?key=9nCgTFPJn6Zp08161WIx',
             satellite: 'https://api.maptiler.com/maps/hybrid/style.json?key=9nCgTFPJn6Zp08161WIx',
-            hybrid: 'https://api.maptiler.com/maps/streets-dark/style.json?key=9nCgTFPJn6Zp08161WIx',
             terrain: 'https://api.maptiler.com/maps/terrain/style.json?key=9nCgTFPJn6Zp08161WIx',
             basic: 'https://api.maptiler.com/maps/basic-v2/style.json?key=9nCgTFPJn6Zp08161WIx'
         };
+        this.comparisonStatsElement = document.getElementById('comparisonStatsDisplay');
         this.initializeMap();
-        this.initializeComparisonUI();
     }
 
     initializeMap() {
         this.map = new maplibregl.Map({
             container: 'map',
             style: this.mapStyles.streets,
-            center: [34.8035, 31.2639],  // Ben Gurion University coordinates
+            center: [34.8035, 31.2639], // BGU Coords
             zoom: 16,
             pitch: 45,
-            bearing: -17.6
+            bearing: -17.6,
+            antialias: true
         });
 
-        // Add navigation controls
         this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-        // Add 3D buildings when the map loads
         this.map.on('load', () => {
+            console.log('Map loaded');
             this.add3DBuildings();
             this.map.on('click', (e) => this.handleMapClick(e));
+            console.log("MapManager: Requesting shadows for client's current time on initial load.");
+            this.resetShadowsToCurrentTime().catch(error => {
+            console.error("MapManager: Error loading shadows for client's current time on initial load:", error);
+            });
+            this.startShadowAutoRefresh();
+        });
+
+        this.map.on('error', (e) => {
+            console.error('MapLibre GL Error:', e.error);
+            this.showError('Map loading error. Please try refreshing.');
         });
     }
 
     add3DBuildings() {
-        // Insert the layer beneath any symbol layer
         const layers = this.map.getStyle().layers;
         let labelLayerId;
         for (let i = 0; i < layers.length; i++) {
@@ -54,34 +65,17 @@ class MapManager {
                 break;
             }
         }
-
-        // Add 3D buildings layer
         this.map.addLayer({
             'id': '3d-buildings',
-            'source': 'composite',
+            'source': 'openmaptiles',
             'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
             'type': 'fill-extrusion',
             'minzoom': 15,
             'paint': {
-                'fill-extrusion-color': '#aaa',
-                'fill-extrusion-height': [
-                    'interpolate',
-                    ['linear'],
-                    ['zoom'],
-                    15,
-                    0,
-                    15.05,
-                    ['get', 'height']
-                ],
-                'fill-extrusion-base': [
-                    'interpolate',
-                    ['linear'],
-                    ['zoom'],
-                    15,
-                    0,
-                    15.05,
-                    ['get', 'min_height']
-                ],
+                'fill-extrusion-color': '#ccc',
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
                 'fill-extrusion-opacity': 0.6
             }
         }, labelLayerId);
@@ -89,506 +83,470 @@ class MapManager {
 
     handleMapClick(e) {
         if (!this.isSettingPoints) return;
-
         const lngLat = e.lngLat;
         if (this.currentPoint === 'start') {
             this.setStartPoint(lngLat);
             this.currentPoint = 'end';
+            this.updateSetPointsButtonState(true, 'Tap map to set Destination');
         } else {
             this.setEndPoint(lngLat);
             this.isSettingPoints = false;
             this.currentPoint = 'start';
+            this.updateSetPointsButtonState(false);
             this.calculateRoute();
         }
     }
 
+    createCustomMarker(color, label) {
+        const container = document.createElement('div');
+        container.className = 'custom-marker-container';
+        const inner = document.createElement('div');
+        inner.className = 'custom-marker';
+        inner.style.backgroundColor = color;
+        inner.style.width = '30px'; inner.style.height = '30px';
+        inner.style.borderRadius = '50%'; inner.style.border = '2px solid white';
+        inner.style.display = 'flex'; inner.style.alignItems = 'center';
+        inner.style.justifyContent = 'center'; inner.style.color = 'white';
+        inner.style.fontWeight = 'bold'; inner.style.fontSize = '14px';
+        inner.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
+        inner.innerText = label;
+        container.appendChild(inner);
+        return container;
+    }
+
     setStartPoint(lngLat) {
-        if (this.startMarker) {
-            this.startMarker.remove();
-        }
-
-        const el = document.createElement('div');
-        el.className = 'custom-div-icon';
-        el.style.backgroundColor = '#2563eb';
-        el.style.width = '20px';
-        el.style.height = '20px';
-        el.style.borderRadius = '50%';
-        el.style.border = '2px solid white';
-
-        this.startMarker = new maplibregl.Marker(el)
-            .setLngLat(lngLat)
-            .addTo(this.map);
+        if (this.startMarker) this.startMarker.remove();
+        this.startPointCoords = lngLat;
+        const el = this.createCustomMarker('var(--primary-color)', 'S');
+        this.startMarker = new maplibregl.Marker({ element: el }).setLngLat([lngLat.lng, lngLat.lat]).addTo(this.map);
     }
 
     setEndPoint(lngLat) {
-        if (this.endMarker) {
-            this.endMarker.remove();
-        }
+        if (this.endMarker) this.endMarker.remove();
+        this.endPointCoords = lngLat;
+        const el = this.createCustomMarker('var(--danger-color)', 'E');
+        this.endMarker = new maplibregl.Marker({ element: el }).setLngLat([lngLat.lng, lngLat.lat]).addTo(this.map);
+    }
 
-        const el = document.createElement('div');
-        el.className = 'custom-div-icon';
-        el.style.backgroundColor = '#ef4444';
-        el.style.width = '20px';
-        el.style.height = '20px';
-        el.style.borderRadius = '50%';
-        el.style.border = '2px solid white';
-
-        this.endMarker = new maplibregl.Marker(el)
-            .setLngLat(lngLat)
-            .addTo(this.map);
+    updateSetPointsButtonState(isActive, customText = null) {
+        const buttonExpanded = document.getElementById('setPointsBtnExpanded');
+        const buttonCollapsed = document.getElementById('setPointsBtnSheet');
+        const defaultText = 'קבע/נקה נקודות';
+        const activeText = customText ? customText : 'לחץ על המפה... (בטל)';
+        [buttonExpanded, buttonCollapsed].forEach(button => {
+            if (button) {
+                if (isActive) {
+                    button.classList.add('active'); button.textContent = activeText;
+                } else {
+                    button.classList.remove('active'); button.textContent = defaultText;
+                }
+            }
+        });
     }
 
     async calculateRoute() {
-        if (!this.startMarker || !this.endMarker) return;
-
-        const start = this.startMarker.getLngLat();
-        const end = this.endMarker.getLngLat();
-
+        if (!this.startPointCoords || !this.endPointCoords) {
+            this.showError("Please set both start and destination points."); return;
+        }
+        const start = this.startPointCoords; const end = this.endPointCoords;
+        this.showLoading('Calculating route...');
         try {
-            this.showLoading('Calculating route...');
-            const response = await fetch('http://localhost:8001/route', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const response = await fetch('/route', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    start: [start.lat, start.lng],
-                    dest: [end.lat, end.lng],
+                    start: [start.lat, start.lng], dest: [end.lat, end.lng],
                     shade_weight: this.shadeWeight
                 })
             });
-
             const data = await response.json();
-            
-            if (response.ok) {
-                this.displayRoute(data.route);
-                this.updateRouteInfo(data);
+            if (response.ok && data.route && data.route.length > 0) {
+                const routeGeoJSON = {
+                    type: 'Feature', properties: {},
+                    geometry: { type: 'LineString', coordinates: data.route.map(coord => [coord[1], coord[0]]) }
+                };
+                this.displayRoute(routeGeoJSON); this.updateRouteInfo(data);
+                this.clearComparisonDisplay();
             } else {
-                this.showError(data.error || 'Failed to calculate route');
+                throw new Error(data.error || 'Failed to calculate route or route is empty');
             }
         } catch (error) {
-            this.showError('Failed to connect to the server');
-            console.error('Error:', error);
-        } finally {
-            this.hideLoading();
+            console.error('Route calculation error:', error);
+            this.showError(error.message || 'Failed to connect to the routing server');
+            this.clearRouteDisplay(); this.updateRouteInfo(null);
+        } finally { this.hideLoading(); }
+    }
+
+    getCurrentPoints() {
+        if (!this.startPointCoords || !this.endPointCoords) return { start: null, dest: null };
+        return {
+            start: { lat: this.startPointCoords.lat, lng: this.startPointCoords.lng },
+            dest: { lat: this.endPointCoords.lat, lng: this.endPointCoords.lng }
+        };
+    }
+
+    displayRoute(routeGeoJSON) {
+        this.lastRouteData = routeGeoJSON;
+        const source = this.map.getSource('route');
+        if (source) { source.setData(routeGeoJSON); }
+        else {
+            this.map.addSource('route', { type: 'geojson', data: routeGeoJSON });
+            this.map.addLayer({
+                id: 'route', type: 'line', source: 'route',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: { 'line-color': '#2563eb', 'line-width': 5, 'line-opacity': 0.85 }
+            }, '3d-buildings');
+        }
+        if (routeGeoJSON.geometry.coordinates.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            routeGeoJSON.geometry.coordinates.forEach(coord => bounds.extend(coord));
+            this.map.fitBounds(bounds, {
+                padding: { top: 50, bottom: 150, left: 50, right: 50 },
+                duration: 1000, maxZoom: 17
+            });
         }
     }
 
-    displayRoute(route) {
-        this.lastRouteData = route; // Store for style changes
-        
-        // Remove existing route layers and sources
-        if (this.map.getLayer('route')) {
-            this.map.removeLayer('route');
-        }
-        if (this.map.getSource('route')) {
-            this.map.removeSource('route');
-        }
-
-        // Convert route coordinates to GeoJSON format
-        const routeGeoJSON = {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-                type: 'LineString',
-                coordinates: route.map(coord => [coord[1], coord[0]]) // Swap lat/lng to lng/lat
-            }
-        };
-
-        // Add the new route source and layer
-        this.map.addSource('route', {
-            type: 'geojson',
-            data: routeGeoJSON
-        });
-
-        this.map.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#2563eb',
-                'line-width': 4,
-                'line-opacity': 0.8
-            }
-        });
-
-        // Fit bounds to the route
-        const bounds = new maplibregl.LngLatBounds();
-        route.forEach(coord => {
-            bounds.extend([coord[1], coord[0]]); // Swap lat/lng to lng/lat
-        });
-
-        this.map.fitBounds(bounds, {
-            padding: 50,
-            duration: 1000 // Add animation duration for smoother transition
-        });
+    clearRouteDisplay() {
+        if (this.map.getLayer('route')) this.map.removeLayer('route');
+        if (this.map.getSource('route')) this.map.removeSource('route');
+        this.lastRouteData = null;
     }
 
     updateRouteInfo(data) {
-        const distance = Math.round(data.distance);
-        const duration = Math.round(distance / 1.4); // Assuming average walking speed of 1.4 m/s
-        
-        const routeInfo = document.getElementById('routeInfo');
-        if (routeInfo) {
-            routeInfo.innerHTML = `
-                <div class="route-stats">
-                    <div>Distance: ${distance}m</div>
-                    <div>Estimated time: ${duration}s</div>
-                    <div>Nodes: ${data.nodes}</div>
-                </div>
-            `;
+        const distanceEl = document.getElementById('routeDistance');
+        const timeEl = document.getElementById('routeTime');
+        const nodesEl = document.getElementById('routeNodes');
+        const sectionEl = document.getElementById('routeInfoSectionSheet');
+        if (distanceEl && timeEl && nodesEl && sectionEl) {
+            if (data && data.distance !== undefined) {
+                const distance = Math.round(data.distance);
+                const minutes = Math.round(distance / 84);
+                distanceEl.textContent = `${distance}m`;
+                timeEl.textContent = `~${minutes} min`;
+                nodesEl.textContent = data.nodes || 'N/A';
+                sectionEl.classList.remove('hidden');
+            } else {
+                distanceEl.textContent = '...'; timeEl.textContent = '...';
+                nodesEl.textContent = '...'; sectionEl.classList.add('hidden');
+            }
         }
     }
 
-    async loadShadows() {
+    startShadowAutoRefresh(newRate) {
+    console.log("MapManager: startShadowAutoRefresh called. Current rate:", this.shadowRefreshRate, "New rate (if any):", newRate);
+    if (newRate && typeof newRate === 'number' && newRate > 0) {
+        this.shadowRefreshRate = newRate;
+    }
+
+    // נקה אינטרוול קודם אם קיים כדי למנוע כפילויות
+    if (this.shadowRefreshInterval) {
+        clearInterval(this.shadowRefreshInterval);
+        console.log("MapManager: Cleared existing shadowRefreshInterval.");
+    }
+
+    this.shadowRefreshInterval = setInterval(() => {
+        console.log("MapManager: Auto-refreshing shadows for current time...");
+        // אין צורך לעדכן את planningStatusP או כפתורים מכאן, כי זה רענון אוטומטי "שקט"
+        this.resetShadowsToCurrentTime().catch(error => {
+            console.error("MapManager: Error during automatic shadow refresh:", error);
+            if (document.getElementById('shadowUpdateTimeDisplay')) {
+                document.getElementById('shadowUpdateTimeDisplay').textContent = 'שגיאה ברענון צללים אוטומטי';
+            }
+        });
+    }, this.shadowRefreshRate);
+
+    console.log(`MapManager: Shadow auto-refresh started/updated with interval: ${this.shadowRefreshRate / 60000} minutes.`);
+}
+
+stopShadowAutoRefresh() {
+    if (this.shadowRefreshInterval) {
+        clearInterval(this.shadowRefreshInterval);
+        this.shadowRefreshInterval = null;
+        console.log("MapManager: Shadow auto-refresh stopped.");
+    }
+}
+
+
+    // פונקציה לטעינה ראשונית של צללים (צללי "עכשיו" מהשרת)
+    async loadInitialShadows() {
+        this.showLoading('טוען צללים נוכחיים...');
         try {
-            this.showLoading('Loading shadows...');
-            const response = await fetch('http://localhost:8001/shadows');
+            const response = await fetch('/shadows'); // קורא לנקודת הקצה שמחזירה צללי ברירת מחדל (עכשיו)
             const data = await response.json();
-            
-            if (response.ok) {
-                this.displayShadows(data.shadows);
+            if (response.ok && data.shadows) {
+                let geojsonData;
+                if (typeof data.shadows === 'string') {
+                    geojsonData = JSON.parse(data.shadows);
+                } else {
+                    geojsonData = data.shadows;
+                }
+                this.displayShadows(geojsonData);
+                this.lastShadowsData = geojsonData; // שמור את הצללים הראשוניים
+                console.log("Initial shadows loaded and displayed.");
             } else {
-                this.showError(data.error || 'Failed to load shadows');
+                 throw new Error(data.error || 'Failed to load initial shadows');
             }
         } catch (error) {
-            this.showError('Failed to connect to the server');
-            console.error('Error:', error);
+            console.error('Initial shadow loading error:', error);
+            this.showError(error.message || 'Failed to connect for initial shadows');
+            this.clearShadowDisplay();
         } finally {
             this.hideLoading();
         }
     }
 
+
     displayShadows(geojson) {
-        this.lastShadowsData = geojson; // Store for style changes
-        if (this.shadowLayer) {
-            this.map.removeLayer('shadows');
-            this.map.removeSource('shadows');
-        }
-
-        try {
-            const parsedData = JSON.parse(geojson);
-            this.map.addSource('shadows', {
-                type: 'geojson',
-                data: parsedData
-            });
-
-            // Find the first symbol layer to insert shadows before it
+        this.lastShadowsData = geojson; // עדכון הצללים האחרונים שנטענו
+        const source = this.map.getSource('shadows');
+        if (source) { source.setData(geojson); }
+        else {
+            this.map.addSource('shadows', { type: 'geojson', data: geojson });
             const layers = this.map.getStyle().layers;
             let labelLayerId;
             for (let i = 0; i < layers.length; i++) {
                 if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                    labelLayerId = layers[i].id;
-                    break;
+                    labelLayerId = layers[i].id; break;
                 }
             }
-
+            const routeLayerId = this.map.getLayer('route') ? 'route' : labelLayerId;
             this.map.addLayer({
-                id: 'shadows',
-                type: 'fill',
-                source: 'shadows',
-                paint: {
-                    'fill-color': '#1e293b',
-                    'fill-opacity': 0.2,
-                    'fill-outline-color': 'transparent'
-                }
-            }, labelLayerId);
-            this.shadowLayer = true;
-        } catch (error) {
-            console.error('Error displaying shadows:', error);
-            this.shadowLayer = false;
+                id: 'shadows', type: 'fill', source: 'shadows',
+                paint: { 'fill-color': 'rgba(0, 0, 0, 0.3)', 'fill-opacity': 0.7, 'fill-outline-color': 'transparent' }
+            }, routeLayerId);
         }
+         console.log("Shadows displayed on map.");
     }
+
+    // פונקציה חדשה לניקוי תצוגת הצללים בלבד
+    clearShadowDisplay() {
+        if (this.map.getLayer('shadows')) {
+            this.map.removeLayer('shadows');
+        }
+        if (this.map.getSource('shadows')) {
+            this.map.removeSource('shadows');
+        }
+        this.lastShadowsData = null; // נקה גם את הנתונים השמורים
+        console.log("Shadow display cleared from map.");
+    }
+
+
+    // --- פונקציות חדשות לתכנון עתידי ---
+async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צללים עתידיים...') { // <<-- הוספת הפרמטר loadingMessage עם ערך ברירת מחדל
+    this.showLoading(loadingMessage); // <<-- שימוש בפרמטר loadingMessage כאן
+    try {
+        const response = await fetch('/shadows_at_time', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ datetime_str: dateTimeString }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            // השתמש בהודעת השגיאה מהשרת אם קיימת, אחרת הודעה כללית
+            throw new Error(data.error || 'שגיאה בטעינת צללים מהשרת');
+        }
+
+        if (data.shadows) {
+            let geojsonData;
+            if (typeof data.shadows === 'string') {
+                geojsonData = JSON.parse(data.shadows);
+            } else {
+                geojsonData = data.shadows;
+            }
+            this.displayShadows(geojsonData);
+            console.log('Shadows loaded and displayed for:', data.requested_time);
+            return data.requested_time;
+        } else {
+            this.clearShadowDisplay();
+            console.log('No shadows to display for the requested time:', data.requested_time, data.message);
+            return data.requested_time;
+        }
+    } catch (error) {
+        console.error('MapManager - loadShadowsForFutureTime error:', error);
+        // השתמש בהודעת השגיאה מהשרת או הודעה כללית
+        this.showError(error.message || 'שגיאה בטעינת צללים.');
+        this.clearShadowDisplay();
+        throw error;
+    } finally {
+        this.hideLoading();
+    }
+}
+
+    async resetShadowsToCurrentTime() {
+    // ... (קוד ליצירת nowDateTimeString) ...
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const nowDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+
+    return this.loadShadowsForFutureTime(nowDateTimeString, 'טוען צללים נוכחיים...'); // <<-- הנקודה החשובה
+}
+
+    // --- סוף פונקציות תכנון עתידי ---
+
 
     setShadeWeight(weight) {
         this.shadeWeight = parseFloat(weight);
-        // Update the display value with one decimal place
-        document.getElementById('shadeValue').textContent = this.shadeWeight.toFixed(1);
-        
-        // Clear any existing timeout
-        if (this.routeCalculationTimeout) {
-            clearTimeout(this.routeCalculationTimeout);
+        const displayElement = document.getElementById('shadeValueDisplaySheet');
+        if (displayElement) displayElement.textContent = this.shadeWeight.toFixed(1);
+        if (this.routeCalculationTimeout) clearTimeout(this.routeCalculationTimeout);
+        if (this.startMarker && this.endMarker) {
+            this.routeCalculationTimeout = setTimeout(() => { this.calculateRoute(); }, 500);
         }
-        
-        // Set a new timeout to calculate the route after 500ms of no changes
-        this.routeCalculationTimeout = setTimeout(() => {
-            if (this.startMarker && this.endMarker) {
-                this.calculateRoute();
-            }
-        }, 500);
     }
 
     togglePointSetting() {
         this.isSettingPoints = !this.isSettingPoints;
-        const button = document.querySelector('.set-points-button');
-        if (button) {
-            button.classList.toggle('active');
-            button.textContent = this.isSettingPoints ? 'Cancel' : 'Set Points';
+        this.currentPoint = 'start';
+        if (this.isSettingPoints) {
+            this.updateSetPointsButtonState(true, 'Tap map to set Start');
+        } else {
+            this.updateSetPointsButtonState(false);
+            if (this.startMarker) { this.startMarker.remove(); this.startMarker = null; }
+            if (this.endMarker) { this.endMarker.remove(); this.endMarker = null; }
+            this.startPointCoords = null; this.endPointCoords = null;
+            this.clearRouteDisplay(); this.updateRouteInfo(null);
+            this.clearComparisonDisplay();
         }
+        console.log('Toggled point setting mode:', this.isSettingPoints);
     }
 
-    showLoading(message) {
-        const spinner = document.querySelector('.loading-spinner');
-        if (spinner) {
-            spinner.querySelector('.message').textContent = message;
-            spinner.classList.add('active');
-        }
+    showLoading(message = 'Loading...') {
+        const spinnerContainer = document.querySelector('.loading-spinner');
+        if (spinnerContainer) {
+            const messageElement = spinnerContainer.querySelector('.message');
+            if(messageElement) messageElement.textContent = message;
+            spinnerContainer.classList.add('active');
+        } else { console.warn('.loading-spinner element not found'); }
     }
 
     hideLoading() {
-        const spinner = document.querySelector('.loading-spinner');
-        if (spinner) {
-            spinner.classList.remove('active');
-        }
+        const spinnerContainer = document.querySelector('.loading-spinner');
+        if (spinnerContainer) spinnerContainer.classList.remove('active');
     }
 
-    showError(message) {
+    showError(message = 'An error occurred.') {
         const errorElement = document.querySelector('.error-message');
         if (errorElement) {
             errorElement.textContent = message;
             errorElement.classList.add('active');
-            setTimeout(() => {
-                errorElement.classList.remove('active');
-            }, 5000);
+            setTimeout(() => { errorElement.classList.remove('active'); }, 5000);
+        } else {
+            console.error('Error message element not found. Error:', message);
+            alert(`Error: ${message}`);
         }
-    }
-
-    async changeMapStyle(styleName) {
-        const currentStyle = this.map.getStyle().name;
-        if (currentStyle === styleName) return;
-
-        // Store current view state
-        const center = this.map.getCenter();
-        const zoom = this.map.getZoom();
-        const pitch = this.map.getPitch();
-        const bearing = this.map.getBearing();
-
-        // Change the map style
-        await this.map.setStyle(this.mapStyles[styleName]);
-
-        // Restore the view state
-        this.map.setCenter(center);
-        this.map.setZoom(zoom);
-        this.map.setPitch(pitch);
-        this.map.setBearing(bearing);
-
-        // Wait for the style to load completely
-        this.map.once('style.load', () => {
-            // Add 3D buildings first
-            this.add3DBuildings();
-            
-            // Re-add click handler
-            this.map.on('click', (e) => this.handleMapClick(e));
-            
-            // Re-add shadows after a short delay to ensure proper layer ordering
-            setTimeout(() => {
-                if (this.lastShadowsData) {
-                    this.displayShadows(this.lastShadowsData);
-                }
-                
-                // Re-add route if it exists
-                if (this.lastRouteData) {
-                    this.displayRoute(this.lastRouteData);
-                }
-            }, 100);
-        });
-    }
-
-    initializeComparisonUI() {
-        // Remove any existing comparison container
-        const existingContainer = document.querySelector('.comparison-container');
-        if (existingContainer) {
-            existingContainer.remove();
-        }
-
-        const comparisonContainer = document.createElement('div');
-        comparisonContainer.className = 'comparison-container';
-        comparisonContainer.innerHTML = `
-            <div class="comparison-controls">
-                <button class="compare-routes-button">Compare Routes</button>
-                <div class="comparison-stats" style="display: none;">
-                    <div class="route-comparison">
-                        <div class="route-info">
-                            <h3>Route Comparison</h3>
-                            <div class="route-details"></div>
-                        </div>
-                        <div class="route-navigation">
-                            <button class="prev-route">Previous</button>
-                            <span class="route-counter">1/1</span>
-                            <button class="next-route">Next</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(comparisonContainer);
-
-        // Add event listeners
-        const compareButton = comparisonContainer.querySelector('.compare-routes-button');
-        const prevButton = comparisonContainer.querySelector('.prev-route');
-        const nextButton = comparisonContainer.querySelector('.next-route');
-
-        compareButton.addEventListener('click', () => this.startRouteComparison());
-        prevButton.addEventListener('click', () => this.showPreviousRoute());
-        nextButton.addEventListener('click', () => this.showNextRoute());
-
-        // Make sure the container is visible
-        comparisonContainer.style.display = 'block';
     }
 
     async startRouteComparison() {
         if (!this.startMarker || !this.endMarker) {
-            this.showError('Please set start and end points first');
-            return;
+            this.showError('Please set start and end points first'); return;
         }
-
         this.comparisonRoutes = [];
-        const shadeWeights = [0.2, 0.5, 0.8, 1.0]; // Different shadow preferences to compare
-
+        const shadeWeights = [1, 3, 6, 9];
+        this.showLoading('Calculating comparison routes...');
         try {
-            this.showLoading('Calculating route comparisons...');
             const start = this.startMarker.getLngLat();
             const end = this.endMarker.getLngLat();
-
-            // Calculate routes with different shadow preferences
             for (const weight of shadeWeights) {
-                const response = await fetch('http://localhost:8001/route', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                const response = await fetch('/route', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        start: [start.lat, start.lng],
-                        dest: [end.lat, end.lng],
+                        start: [start.lat, start.lng], dest: [end.lat, end.lng],
                         shade_weight: weight
                     })
                 });
-
                 const data = await response.json();
-                if (response.ok) {
+                // console.log(`Data from backend for shade_weight ${weight}:`, JSON.parse(JSON.stringify(data))); // להסיר אחרי בדיקה
+                if (response.ok && data.route && data.route.length > 0) {
+                    const routeGeoJSON = {
+                        type: 'Feature', properties: { shadeWeight: weight },
+                        geometry: { type: 'LineString', coordinates: data.route.map(coord => [coord[1], coord[0]]) }
+                    };
                     this.comparisonRoutes.push({
-                        route: data.route,
-                        distance: data.distance,
-                        nodes: data.nodes,
-                        shadeWeight: weight
+                        route: routeGeoJSON, distance: data.distance,
+                        nodes: data.nodes, shadeWeight: weight
                     });
+                } else {
+                    console.warn(`Failed to calculate route for shade weight ${weight}: ${data.error || 'Unknown error'}`);
                 }
             }
+            // console.log('All comparison routes data stored:', JSON.parse(JSON.stringify(this.comparisonRoutes))); // להסיר אחרי בדיקה
 
             if (this.comparisonRoutes.length > 0) {
-                this.showComparisonUI();
                 this.currentComparisonIndex = 0;
-                this.displayComparisonRoute(0);
+                this.displayComparisonRoute(this.currentComparisonIndex);
+                if(this.comparisonStatsElement) this.comparisonStatsElement.classList.remove('hidden');
             } else {
-                this.showError('Failed to calculate comparison routes');
+                this.showError('Failed to calculate any comparison routes');
+                this.clearComparisonDisplay();
             }
         } catch (error) {
-            this.showError('Failed to connect to the server');
-            console.error('Error:', error);
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    showComparisonUI() {
-        const compareButton = document.querySelector('.compare-routes-button');
-        
-        if (compareButton) {
-            // Remove any existing comparison stats
-            const existingStats = document.querySelector('.comparison-stats');
-            if (existingStats) {
-                existingStats.remove();
-            }
-
-            // Create new comparison stats container
-            const statsContainer = document.createElement('div');
-            statsContainer.className = 'comparison-stats';
-            document.body.appendChild(statsContainer);
-
-            // Add the comparison content
-            statsContainer.innerHTML = `
-                <div class="route-comparison">
-                    <div class="route-info">
-                        <h3>Route Comparison</h3>
-                        <div class="route-details"></div>
-                    </div>
-                    <div class="route-navigation">
-                        <button class="prev-route">Previous</button>
-                        <span class="route-counter">1/1</span>
-                        <button class="next-route">Next</button>
-                    </div>
-                </div>
-            `;
-
-            // Re-attach event listeners
-            const prevButton = statsContainer.querySelector('.prev-route');
-            const nextButton = statsContainer.querySelector('.next-route');
-            prevButton.addEventListener('click', () => this.showPreviousRoute());
-            nextButton.addEventListener('click', () => this.showNextRoute());
-            
-            this.updateComparisonStats();
-        }
+            console.error('Route comparison error:', error);
+            this.showError(error.message || 'Failed to connect to the server for comparison');
+            this.clearComparisonDisplay();
+        } finally { this.hideLoading(); }
     }
 
     displayComparisonRoute(index) {
         if (index < 0 || index >= this.comparisonRoutes.length) return;
-        
-        const route = this.comparisonRoutes[index];
-        this.displayRoute(route.route);
+        const routeData = this.comparisonRoutes[index];
+        this.displayRoute(routeData.route);
         this.updateComparisonStats();
     }
 
     updateComparisonStats() {
-        const routeDetails = document.querySelector('.route-details');
-        const routeCounter = document.querySelector('.route-counter');
+        if (!this.comparisonStatsElement) { console.warn('#comparisonStatsDisplay element not found'); return; }
+        if (this.comparisonRoutes.length === 0) { this.clearComparisonDisplay(); return; }
         const currentRoute = this.comparisonRoutes[this.currentComparisonIndex];
+        if (!currentRoute) { this.clearComparisonDisplay(); return; }
 
-        if (currentRoute) {
-            const duration = Math.round(currentRoute.distance / 1.4);
-            routeDetails.innerHTML = `
-                <div class="route-stat">
-                    <span>Shadow Preference:</span>
-                    <span>${(currentRoute.shadeWeight * 100).toFixed(0)}%</span>
-                </div>
-                <div class="route-stat">
-                    <span>Distance:</span>
-                    <span>${Math.round(currentRoute.distance)}m</span>
-                </div>
-                <div class="route-stat">
-                    <span>Estimated Time:</span>
-                    <span>${duration}s</span>
-                </div>
-                <div class="route-stat">
-                    <span>Nodes:</span>
-                    <span>${currentRoute.nodes}</span>
-                </div>
-            `;
+        // הסרנו הדפסות מיותרות מכאן
+        const distanceForDisplay = Math.round(currentRoute.distance);
+        const minutesForDisplay = Math.round(currentRoute.distance / 84);
 
-            routeCounter.textContent = `${this.currentComparisonIndex + 1}/${this.comparisonRoutes.length}`;
+        this.comparisonStatsElement.innerHTML = `
+            <h4>Route Comparison (${this.currentComparisonIndex + 1}/${this.comparisonRoutes.length})</h4>
+            <div class="route-details">
+                <div class="route-stat"><span>Shade Preference:</span><span>${currentRoute.shadeWeight.toFixed(1)}</span></div>
+                <div class="route-stat"><span>Distance:</span><span>${distanceForDisplay}m</span></div>
+                <div class="route-stat"><span>Estimated Time:</span><span>~${minutesForDisplay} min</span></div>
+                <div class="route-stat"><span>Nodes:</span><span>${currentRoute.nodes || 'N/A'}</span></div>
+            </div>
+            <div class="route-navigation">
+                 <button id="prevCompRouteBtn" class="sheet-button" ${this.currentComparisonIndex === 0 ? 'disabled' : ''}>&lt; Prev</button>
+                <button id="nextCompRouteBtn" class="sheet-button" ${this.currentComparisonIndex >= this.comparisonRoutes.length - 1 ? 'disabled' : ''}>Next &gt;</button>
+            </div>
+        `;
+        this.comparisonStatsElement.classList.remove('hidden');
+        const parentSection = document.getElementById('comparisonSectionSheet');
+        if (parentSection) parentSection.classList.remove('hidden');
+    }
+
+    clearComparisonDisplay() {
+        this.comparisonRoutes = []; this.currentComparisonIndex = 0;
+        if (this.comparisonStatsElement) {
+            this.comparisonStatsElement.innerHTML = '';
+            this.comparisonStatsElement.classList.add('hidden');
         }
     }
 
-    showPreviousRoute() {
+    showPreviousComparisonRoute() {
         if (this.currentComparisonIndex > 0) {
-            this.currentComparisonIndex--;
-            this.displayComparisonRoute(this.currentComparisonIndex);
+            this.currentComparisonIndex--; this.displayComparisonRoute(this.currentComparisonIndex);
         }
     }
 
-    showNextRoute() {
+    showNextComparisonRoute() {
         if (this.currentComparisonIndex < this.comparisonRoutes.length - 1) {
-            this.currentComparisonIndex++;
-            this.displayComparisonRoute(this.currentComparisonIndex);
+            this.currentComparisonIndex++; this.displayComparisonRoute(this.currentComparisonIndex);
         }
     }
 }
 
-// Initialize map when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.mapManager = new MapManager();
-    window.mapManager.loadShadows();
-}); 
+});

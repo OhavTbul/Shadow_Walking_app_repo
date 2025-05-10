@@ -18,40 +18,16 @@ html, body {
 }
 
 #map {
-    height: 85%;
+    height: 100%;
     border-radius: 12px;
     margin: 0 20px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-#controls {
-    height: 15%;
-    background: white;
-    padding: 20px;
-    box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-}
+.danger-btn { background: var(--danger-color); }
+.danger-btn:hover { background: var(--danger-hover); }
 
-.controls-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: center;
-    justify-content: center;
-}
 
-.control-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--background);
-    padding: 12px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-}
 
 .map-status {
     position: absolute;
@@ -114,9 +90,9 @@ html, body {
     justify-content: center;
 }
 
-.set-points-button.active {
+/*.set-points-button.active {
     background: var(--primary-hover);
-    animation: pulse 2s infinite;
+    animation: pulse 2s infinite;*/
 }
 
 @keyframes pulse {
@@ -206,7 +182,7 @@ input[type=range]::-webkit-slider-thumb:hover {
     transform: scale(1.1);
 }
 
-#shadeValue {
+#shadeValueDisplaySheet {
     min-width: 40px;
     text-align: center;
     font-weight: 500;
@@ -300,27 +276,9 @@ input[type=range]::-webkit-slider-thumb:hover {
     to { transform: translate(-50%, 0); }
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    #map {
-        height: 70%;
-        margin: 0 10px;
-    }
 
-    #controls {
-        height: 30%;
-        padding: 15px;
-    }
 
-    .controls-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
 
-    .control-group {
-        width: 100%;
-        justify-content: space-between;
-    }
 
     .slider-container {
         width: 100%;
@@ -330,18 +288,7 @@ input[type=range]::-webkit-slider-thumb:hover {
         flex: 1;
     }
 }
-.bgu-logo {
-  height: 40px; /* במקום 60px */
-  width: auto;
-  object-fit: contain;
-}
 
-/* ואם רוצים שזה ייראה מעולה גם במסכים ממש קטנים */
-@media (max-width: 600px) {
-  .bgu-logo {
-    height: 30px;
-  }
-}
 
 
 
@@ -350,6 +297,7 @@ input[type=range]::-webkit-slider-thumb:hover {
   justify-content: center;
   margin: 20px 0;
 }
+.hidden { display: none; }
 
 .auth-card {
   background: white;
@@ -423,24 +371,235 @@ input[type=range]::-webkit-slider-thumb:hover {
 }
 
 /* bigger, centered greeting in the top bar */
-.top-bar {
+/*.top-bar {
   display: none;            /* still hidden until login */
-  justify-content: center;  /* center its contents horizontally */
-  align-items: center;      /* center vertically */
-  font-size: 1.25rem;       /* bump up the text size */
-  padding: 1rem 0;          /* some vertical breathing room */
-  background: white;
+  /*justify-content: center;  /* center its contents horizontally */
+  /*align-items: center;      /* center vertically */
+  /*font-size: 1.25rem;       /* bump up the text size */
+  /*padding: 1rem 0;          /* some vertical breathing room */
+  /*background: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   position: sticky;
   top: 0;
   z-index: 100;
+}*/
+
+/*.top-bar button {
+  margin-left: 1rem;        /* separate the Logout button slightly */
+  /*font-size: 1rem;          /* make the button text a bit bigger */
+ /* padding: 0.5rem 1rem;
+}*/
+
+#topBar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-.top-bar button {
-  margin-left: 1rem;        /* separate the Logout button slightly */
-  font-size: 1rem;          /* make the button text a bit bigger */
-  padding: 0.5rem 1rem;
+#topBar button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
+
+#topBar button:hover {
+  background: var(--primary-hover);
+}
+
+/*.set-points-button {
+    background-color: #3b82f6; /* כחול */
+    /*color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 9999px; /* עיגול מלא */
+    /*padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: background-color 0.3s, transform 0.2s;
+}*/
+
+
+/* לאחד את שתי ההגדרות הקיימות לזו: */
+.set-points-button {
+    /* עדיף להשתמש במשתנה כאן: background-color: var(--primary-color); */
+    background-color: #2563eb;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    /* אם צריך את אלה מהגדרת button הכללית, אפשר להוסיף/לבדוק: */
+    /* display: flex; */
+    /* align-items: center; */
+    /* gap: 8px; */
+}
+
+/* ההגדרה למצב פעיל נראית בסדר אם רוצים רקע אדום: */
+.set-points-button.active {
+    background-color: var(--danger-color); /* שימוש במשתנה צבע אדום */
+}
+
+/* ודא שאין הגדרות .active אחרות לאותו כפתור שפעילות וסותרות את זו */
+/* למשל, ההגדרה עם האנימציה pulse - אם אתה לא רוצה אותה, ודא שהיא בהערה או מחוקה */
+/* @keyframes pulse { ... } - הגדרת האנימציה עצמה יכולה להישאר */
+
+/* ============================== */
+/* === Bottom Sheet Styling === */
+/* ============================== */
+
+#bottomSheet {
+    position: fixed; /* או absolute אם הגוף לא גולל */
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    background-color: white;
+    border-top-left-radius: 18px; /* עיגול פינות עליונות */
+    border-top-right-radius: 18px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15); /* צל עדין */
+
+    /* אנימציה חלקה למעבר בין מצבים */
+    transition: transform 0.35s ease-in-out;
+
+    /* נשתמש במשתני CSS לגבהים כדי שיהיה קל לשנות ב-JS ו-Media Queries */
+    --sheet-collapsed-height: 90px;  /* גובה במצב מכווץ */
+    --sheet-expanded-height: 80%;  /* גובה במצב מורחב (אחוז מהמסך) */
+
+    /* גובה כולל (כדי שנוכל לגלול תוכן ארוך בפנים) */
+    height: var(--sheet-expanded-height);
+    /* מיקום התחלתי: מוסתר חלקית, רק החלק המכווץ נראה */
+    transform: translateY(calc(100% - var(--sheet-collapsed-height)));
+
+    z-index: 1000; /* מעל המפה */
+}
+
+/* מצב מורחב: הזז את הפאנל למעלה */
+#bottomSheet.expanded {
+    transform: translateY(calc(100% - var(--sheet-expanded-height)));
+}
+
+/* מצב סגור (אופציונלי): הזז לגמרי למטה */
+#bottomSheet.hidden {
+    transform: translateY(100%);
+}
+
+/* עיצוב הידית */
+.sheet-handle {
+    padding: 10px 0; /* ריווח מעל ומתחת לידית */
+    cursor: grab;    /* סמן עכבר לגרירה */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.handle-bar {
+    width: 45px;
+    height: 5px;
+    background-color: #d1d5db; /* צבע אפור בהיר */
+    border-radius: 3px;
+}
+
+/* עיצוב אזורי התוכן */
+.sheet-content {
+    /* הגדרת גלילה אם התוכן ארוך מהגובה הפנוי */
+    overflow-y: auto;
+    /* חישוב גובה מקסימלי פחות גובה הידית */
+    max-height: calc(100% - 40px); /* התאימו לפי גובה הידית בפועל */
+    padding: 0 20px 20px 20px; /* ריווח פנימי */
+}
+
+/* הסתרת/הצגת תוכן לפי מצב הפאנל */
+.expanded-content { display: none; }
+.collapsed-content { display: block; } /* ברירת מחדל */
+
+#bottomSheet.expanded .expanded-content { display: block; }
+#bottomSheet.expanded .collapsed-content { display: none; }
+
+/* עיצובים נוספים בתוך הפאנל (דוגמאות) */
+.control-section {
+    margin-top: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+.control-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.control-section h2, .control-section h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--primary-color); /* שימוש במשתנה צבע */
+}
+/* כדאי להגדיר סגנון לכפתורים בתוך הפאנל, אולי עם class נפרד */
+.sheet-button {
+    /* אפשר להעתיק סגנון מכפתור רגיל או להגדיר משהו ייחודי */
+    padding: 8px 15px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    /* ... עוד סגנונות ... */
+}
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* התאמות למסכים קטנים יותר */
+@media (max-width: 600px) {
+    #bottomSheet {
+        --sheet-collapsed-height: 80px;
+        --sheet-expanded-height: 75%; /* תופס יותר גובה בנייד */
+    }
+    .sheet-content {
+        padding: 0 15px 15px 15px;
+    }
+}
+
+#authContainer.hidden {
+    display: none;
+}
+
+.bgu-logo {
+  height: 40px;
+  max-height: 40px;
+  width: auto;
+  object-fit: contain;
+  align-self: center;
+}
+
+/* ואם רוצים שזה ייראה מעולה גם במסכים ממש קטנים */
+@media (max-width: 600px) {
+  .bgu-logo {
+    height: 30px;
+    /* כדאי להוסיף כאן גם max-height: 30px; לעקביות */
+  }
+}
+
+/* ============================== */
+/* == End Bottom Sheet Styling == */
+/* ============================== */
+
+
 
 
 

@@ -1,8 +1,23 @@
 [
   {
+    "id": 1,
     "email": "ohav1472@gmail.com",
     "password": "123456",
     "first_name": "Ohav",
-    "last_name": "Tbul"
+    "last_name": "Tbul",
+    "favorite_routes": [
+      {
+        "origin": [
+          31.26238876251439,
+          34.79997494758203
+        ],
+        "dest": [
+          31.26389030473996,
+          34.80273593763468
+        ],
+        "origin_name": "3",
+        "dest_name": "4"
+      }
+    ]
   }
 ]

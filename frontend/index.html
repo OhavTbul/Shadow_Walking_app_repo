@@ -1,564 +1,129 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Shadow Route Planner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css' rel='stylesheet' />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/comparison.css" />
-  <script src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js'></script>
-  <style>
-    :root {
-      --primary-color: #2563eb;
-      --primary-hover: #1d4ed8;
-      --danger-color: #ef4444;
-      --danger-hover: #dc2626;
-      --background: #f8fafc;
-      --text-primary: #1e293b;
-      --text-secondary: #64748b;
-      --border-color: #e2e8f0;
-    }
-
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: 'Inter', sans-serif;
-      background: var(--background);
-      color: var(--text-primary);
-    }
-
-    #map {
-      height: 85%;
-      border-radius: 12px;
-      margin: 0 20px;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    }
-
-    #controls {
-      height: 15%;
-      background: white;
-      padding: 20px;
-      box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1);
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-    }
-
-    .controls-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--background);
-      padding: 12px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-    }
-
-    .map-status {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      font-size: 14px;
-      color: var(--text-secondary);
-      z-index: 400;
-      transition: all 0.2s ease;
-    }
-
-    .update-timer {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      font-size: 14px;
-      color: var(--text-secondary);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .update-timer .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid var(--border-color);
-      border-top: 2px solid var(--primary-color);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    .update-timer.updating {
-      background: var(--primary-color);
-      color: white;
-    }
-
-    .update-timer.updating .spinner {
-      border-color: rgba(255,255,255,0.3);
-      border-top-color: white;
-    }
-
-    .map-status.active {
-      background: var(--primary-color);
-      color: white;
-    }
-
-    .set-points-button {
-      position: relative;
-      min-width: 160px;
-      justify-content: center;
-    }
-
-    .set-points-button.active {
-      background: var(--primary-hover);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    .point-status {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-      text-align: center;
-    }
-
-    .point-status.active {
-      color: var(--primary-color);
-      font-weight: 500;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--primary-color);
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    button:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    }
-
-    button:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    button[style*="background: #f44336"] {
-      background: var(--danger-color) !important;
-    }
-
-    button[style*="background: #f44336"]:hover {
-      background: var(--danger-hover) !important;
-    }
-
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-    }
-
-    input[type=range] {
-      width: 150px;
-      height: 6px;
-      -webkit-appearance: none;
-      background: var(--border-color);
-      border-radius: 3px;
-      outline: none;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      background: var(--primary-color);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-    }
-
-    #shadeValue {
-      min-width: 40px;
-      text-align: center;
-      font-weight: 500;
-      color: var(--primary-color);
-    }
-
-    .title {
-      text-align: center;
-      padding: 20px;
-      background: white;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      position: relative;
-      z-index: 500;
-    }
-
-    .title-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 10px;
-    }
-
-    .bgu-logo {
-      height: 60px;
-      width: auto;
-      object-fit: contain;
-    }
-
-    .title h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .description {
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 15px;
-      margin-top: 8px;
-      line-height: 1.5;
-    }
-
-    .loading {
-      display: none;
-      text-align: center;
-      margin: 15px 0;
-      color: var(--text-secondary);
-    }
-
-    .loading.active {
-      display: block;
-    }
-
-    .spinner {
-      width: 24px;
-      height: 24px;
-      border: 3px solid var(--border-color);
-      border-top: 3px solid var(--primary-color);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      margin-right: 8px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
-
-    .tooltip .tooltip-text {
-      visibility: hidden;
-      background-color: var(--text-primary);
-      color: white;
-      text-align: center;
-      padding: 8px 12px;
-      border-radius: 8px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: all 0.2s ease;
-      font-size: 13px;
-      white-space: nowrap;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    }
-
-    .tooltip:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-      transform: translateX(-50%) translateY(-5px);
-    }
-
-    label {
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    /* Modern scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--background);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    .map-style-select {
-      padding: 8px 12px;
-      font-size: 14px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      background: white;
-      color: var(--text-primary);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      min-width: 120px;
-    }
-
-    .map-style-select:hover {
-      border-color: var(--primary-color);
-    }
-
-    .map-style-select:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-    }
-  </style>
-</head>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/comparison.css">
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  </head>
 <body>
 
-
-  <div class="title">
-    <div class="title-content">
-      <img src="assets/bgu-logo.png" alt="Ben-Gurion University Logo" class="bgu-logo">
-      <h1>Shadow Route Planner</h1>
-    </div>
-    <div class="description">
-      Find the optimal walking route based on sun exposure and shadow coverage
-    </div>
+<div class="title">
+  <div class="title-content">
+    <img src="assets/bgu-logo.png" class="bgu-logo" alt="Ben-Gurion University">
+    <h1>Shadow Route Planner</h1>
   </div>
+  <div class="description">Find the optimal walking route based on sun exposure and shadow coverage</div>
+    <div id="shadowUpdateTimeDisplay" style="text-align: center; font-size: 0.8em; color: var(--text-secondary); margin-top: 5px;">
+  </div>
+</div>
 
-   <!-- Top bar (hidden until login) -->
-  <div class="top-bar" id="topBar" style="display:none;"></div>
-
-  <!-- Auth card -->
-  <div class="auth-container" id="authContainer">
-    <div class="auth-card">
-      <div class="auth-tabs">
-        <button id="loginTab" class="tab-button active" onclick="showLogin()">Login</button>
-        <button id="registerTab" class="tab-button" onclick="showRegister()">Register</button>
-      </div>
-      <form id="loginForm">
-        <h2>Login</h2>
-        <input type="email" id="loginEmail" placeholder="Email" required><br>
-        <input type="password" id="loginPassword" placeholder="Password" required><br>
-        <button type="submit">Login</button>
-      </form>
-      <form id="registerForm" style="display:none;">
-        <h2>Register</h2>
-        <input type="text" id="regFirstName" placeholder="First Name" required><br>
-        <input type="text" id="regLastName" placeholder="Last Name" required><br>
-        <input type="email" id="regEmail" placeholder="Email" required><br>
-        <input type="password" id="regPassword" placeholder="Password" required><br>
-        <button type="submit">Register</button>
-      </form>
-      <div id="message"></div>
+<div class="auth-container" id="authContainer">
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button id="loginTab" class="tab-button active">Login</button>
+      <button id="registerTab" class="tab-button">Register</button>
     </div>
+    <form id="loginForm">
+      <h2>Login</h2>
+      <input type="email" id="loginEmail" placeholder="Email" required><br>
+      <input type="password" id="loginPassword" placeholder="Password" required><br>
+      <button type="submit">Login</button>
+    </form>
+    <form id="registerForm" style="display:none;">
+      <h2>Register</h2>
+      <input type="text" id="regFirstName" placeholder="First Name" required><br>
+      <input type="text" id="regLastName" placeholder="Last Name" required><br>
+      <input type="email" id="regEmail" placeholder="Email" required><br>
+      <input type="password" id="regPassword" placeholder="Password" required><br>
+      <button type="submit">Register</button>
+    </form>
+    <div id="message"></div>
   </div>
+</div>
 
-  <div id="map"></div>
+<div id="topBar" class="hidden"></div>
 
-  <div class="loading-spinner">
-    <div class="spinner"></div>
-    <div class="message">Loading...</div>
-  </div>
+<div id="map"></div>
 
-  <div class="error-message"></div>
+<div id="bottomSheet" class="sheet collapsed">
+    <div class="sheet-handle">
+        <span class="handle-bar"></span>
+    </div>
 
-  <div id="controls">
-    <div class="controls-container">
-      <div class="control-group">
-        <button class="set-points-button" onclick="window.mapManager.togglePointSetting()">
-          Set Points
-        </button>
-        <div class="point-status">Click on the map to set start and end points</div>
-      </div>
+    <div class="sheet-content collapsed-content">
+        <h4>מצא מסלול מוצל</h4>
+        <button id="setPointsBtnSheet" class="sheet-button">קבע נקודות מוצא ויעד</button>
+    </div>
 
-      <div class="control-group">
-        <button class="compare-routes-button" onclick="window.mapManager.startRouteComparison()">
-          Compare Routes
-        </button>
-      </div>
+    <div class="sheet-content expanded-content">
+        <h2>פקדים והגדרות</h2>
 
-      <div class="control-group">
-        <div class="slider-container">
-          <span>Shade Preference:</span>
-          <input type="range"
-                 min="0.1"
-                 max="10"
-                 step="0.1"
-                 value="1"
-                 oninput="this.nextElementSibling.value = this.value; window.mapManager.setShadeWeight(this.value)">
-          <span id="shadeValue">1.0</span>
+        <div class="control-section">
+            <h3>תכנון מסלול</h3>
+            <button id="setPointsBtnExpanded" class="sheet-button">קבע/נקה נקודות</button>
+            <button id="compareRoutesBtnSheet" class="sheet-button" title="השווה מסלולים עם העדפות צל שונות">השווה מסלולים</button>
+            <div class="slider-group">
+                <label for="shadeSliderSheet">העדפת צל:</label>
+                 <input type="range" min="0.1" max="10" step="0.1" value="1" id="shadeSliderSheet">
+                <span id="shadeValueDisplaySheet">1.0</span>
+            </div>
         </div>
-      </div>
 
-      <div class="control-group">
-        <select id="mapStyle" onchange="window.mapManager.changeMapStyle(this.value)" class="map-style-select">
-          <option value="streets">Streets</option>
-          <option value="satellite">Satellite</option>
-          <option value="hybrid">Hybrid</option>
-          <option value="terrain">Terrain</option>
-          <option value="basic">Basic</option>
-        </select>
-      </div>
+        <div id="comparisonSectionSheet" class="control-section hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3>השוואת מסלולים</h3>
+                <button id="closeComparisonBtn" class="sheet-button small-icon-button" title="סגור השוואה">&times;</button>
+        </div>
+            <div id="comparisonStatsDisplay">
+        </div>
+        </div>
 
-      <div id="routeInfo" class="control-group">
-        <!-- Route information will be displayed here -->
-      </div>
+         <div id="futurePlanningSection" class="control-section hidden">
+            <h3>תכנון עתידי</h3>
+            <div>
+                <label for="futureDate">תאריך:</label>
+                <input type="date" id="futureDate" class="sheet-input">
+            </div>
+            <div style="margin-top: 8px;">
+                <label for="futureTime">שעה:</label> <input type="time" id="futureTime" step="900" class="sheet-input">
+            </div>
+            <button id="applyFuturePlanBtn" class="sheet-button" style="margin-top: 10px;">הצג צל עתידי</button>
+            <button id="resetToNowBtn" class="sheet-button danger-btn" style="margin-top: 10px; display:none;">אפס לזמן נוכחי</button>
+            <p id="planningStatus" style="font-size: 0.9em; color: var(--text-primary); margin-top: 8px;"></p>
+        </div>
+
+        <div id="favoritesSectionSheet" class="control-section hidden">
+            <h3>מועדפים</h3>
+            <input type="text" id="favOriginNameSheet" placeholder="שם נקודת מוצא (אופציונלי)">
+            <input type="text" id="favDestNameSheet" placeholder="שם יעד (אופציונלי)">
+            <button id="saveFavBtnSheet" class="sheet-button">שמור מועדף</button>
+            <select id="favListSheet"></select>
+            <button id="calcFavBtnSheet" class="sheet-button" disabled>השתמש במועדף</button>
+            <button id="deleteFavBtnSheet" class="sheet-button danger-btn" disabled>מחק מועדף</button>
+        </div>
+
+        <div class="control-section hidden" id="routeInfoSectionSheet">
+             <h3>פרטי המסלול</h3>
+             <p>מרחק: <span id="routeDistance">...</span></p>
+             <p>זמן מוערך: <span id="routeTime">...</span></p>
+             <p>Nodes: <span id="routeNodes">...</span></p>
+        </div>
     </div>
-  </div>
+</div>
 
-  <script src="js/map.js"></script>
-<!-- Authentication scripts -->
-<script>
-  // 1) תפסי את האלמנטים
-  const loginForm      = document.getElementById('loginForm');
-  const registerForm   = document.getElementById('registerForm');
-  const loginTab       = document.getElementById('loginTab');
-  const registerTab    = document.getElementById('registerTab');
-  const authContainer  = document.getElementById('authContainer');
-  const topBar         = document.getElementById('topBar');
-  const messageDiv     = document.getElementById('message');
+<div class="loading-spinner">
+     <div class="spinner"></div>
+     <div class="message">Loading...</div>
+</div>
+<div class="error-message">
+     </div>
 
-  // 2) הגדרי אותם כגלובליים (או פשוט בלי inline onclick)
-  window.showLogin = function() {
-    loginForm.style.display    = 'block';
-    registerForm.style.display = 'none';
-    loginTab.classList.add('active');
-    registerTab.classList.remove('active');
-  };
-  window.showRegister = function() {
-    loginForm.style.display    = 'none';
-    registerForm.style.display = 'block';
-    loginTab.classList.remove('active');
-    registerTab.classList.add('active');
-  };
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // Auto-login
-    const u = JSON.parse(sessionStorage.getItem('currentUser'));
-    if (u) loginSuccess(u.firstName);
-
-    // 3) קישור מאזיני טפסים
-    registerForm.addEventListener('submit', registerUser);
-    loginForm   .addEventListener('submit', loginUser);
-  });
-
-  // 4) Handlers
-  async function registerUser(e) {
-    e.preventDefault();
-    console.log('registerUser called');              // בדיקה
-    const body = {
-      first_name: regFirstName.value.trim(),
-      last_name:  regLastName.value.trim(),
-      email:      regEmail.value.trim(),
-      password:   regPassword.value.trim()
-    };
-    const res = await fetch('/register', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(body)
-    });
-    console.log('register response:', res.status);   // בדיקה
-    const d = await res.json();
-    if (!res.ok) return showMessage(d.error, true);
-    sessionStorage.setItem('currentUser', JSON.stringify({ firstName: d.first_name }));
-    loginSuccess(d.first_name);
-  }
-
-  async function loginUser(e) {
-    e.preventDefault();
-    console.log('loginUser called');                 // בדיקה
-    const body = {
-      email:    loginEmail.value.trim(),
-      password: loginPassword.value.trim()
-    };
-    const res = await fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(body)
-    });
-    console.log('login response:', res.status);      // בדיקה
-    const d = await res.json();
-    if (!res.ok) return showMessage(d.error, true);
-    sessionStorage.setItem('currentUser', JSON.stringify({ firstName: d.first_name }));
-    loginSuccess(d.first_name);
-  }
-
-  function showMessage(msg, isErr) {
-    messageDiv.style.color = isErr ? 'red' : 'green';
-    messageDiv.innerText   = msg;
-  }
-
- function loginSuccess(firstName) {
-  authContainer.style.display = 'none';
-  topBar.style.display       = 'flex';
-  topBar.innerHTML           = `
-    שלום, <span style="color:var(--primary-color)">${firstName}</span>!
-    <button onclick="logout()">Logout</button>`;
-}
-
-  function logout() {
-    sessionStorage.removeItem('currentUser');
-    location.reload();
-  }
-</script>
-
-
+<script src="js/map.js"></script>
+<script src="js/app.js"></script> <script src="js/bottomSheet.js"></script>
 </body>
 </html>
