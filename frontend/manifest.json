@@ -1,0 +1,25 @@
+{
+    "name": "Shadow Route Planner",
+    "short_name": "ShadowRoutes",
+    "description": "Find the shortest and shadiest routes.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#2563eb",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "assets/icons/icon-192x192.jpg",
+            "sizes": "192x192",
+            "type": "image/jpg",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/icons/icon-512x512.jpg",
+            "sizes": "512x512",
+            "type": "image/jpg",
+            "purpose": "any maskable"
+        }
+
+    ]
+}
