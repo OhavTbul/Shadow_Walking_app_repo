@@ -85,8 +85,8 @@ class Class_Shadow:
             combined_polygon = unary_union([inflated_footprint, buffered_shadow])
 
             # Print information for debugging or verification
-            print(f"Building Height: {height}, Altitude: {altitude_value}, Shadow Length: {shadow_length}")
-            print(f"Azimuth: {azimuth}, Shadow Vector: {shadow_vector}")
+            #print(f"Building Height: {height}, Altitude: {altitude_value}, Shadow Length: {shadow_length}")
+            #print(f"Azimuth: {azimuth}, Shadow Vector: {shadow_vector}")
 
             if isinstance(combined_polygon, Polygon):
                 # Create a new Polygon without holes
@@ -203,117 +203,118 @@ class Class_Shadow:
             plt.show()
 
     @staticmethod
-    def analyze_coverage(G, shadow_gdf, buildings, custom_bounds=None,plot=True):
-        # Ensure CRS consistency before analyzing paths
+    def analyze_coverage(G, shadow_gdf, buildings, custom_bounds=None, plot=True):  # plot=True הוא ברירת המחדל
         graph_crs = G.graph.get('crs', None)
         if graph_crs is None:
             raise ValueError("Graph G does not have a defined CRS. Please make sure it has a valid CRS.")
 
-        # Ensure both datasets are in the same CRS
         if shadow_gdf.crs != graph_crs:
             shadow_gdf = shadow_gdf.to_crs(graph_crs)
 
-        # Create a larger figure for visualization
-        fig, ax = plt.subplots(figsize=(15, 15), dpi=100)
-        fig.tight_layout()
+        ax = None
+        if plot:
+            fig, ax = plt.subplots(figsize=(15, 15), dpi=100)
+            if hasattr(fig, 'tight_layout'):  # בדיקה נוספת לפני קריאה
+                fig.tight_layout()
 
-        # Plot buildings (as shadow proxies)
-        shadow_gdf.plot(ax=ax, color='darkgrey', alpha=0.7, label='Shadows')
+            # גם אם shadow_gdf ריק, .plot() לא יזרוק שגיאה, פשוט לא יצייר כלום
+            if not shadow_gdf.empty:
+                shadow_gdf.plot(ax=ax, color='darkgrey', alpha=0.7, label='Shadows')
+            if not buildings.empty:
+                buildings.plot(ax=ax, color='orange', alpha=0.7, edgecolor='black')
+            ox.plot_graph(G, ax=ax, show=False, close=False, edge_color="gray", edge_linewidth=1)
 
-        buildings.plot(ax=ax, color='orange', alpha=0.7, edgecolor='black')
-
-        # Plot the graph with all paths using osmnx
-        ox.plot_graph(G, ax=ax, show=False, close=False, edge_color="gray", edge_linewidth=1)
+        combined_shadow_geometry = None
+        if not shadow_gdf.empty:
+            temp_union = shadow_gdf.unary_union
+            if temp_union is not None and not temp_union.is_empty:
+                combined_shadow_geometry = temp_union
 
         for u, v, key, edge in G.edges(keys=True, data=True):
             path = edge.get('geometry')
+            covered_path_length = 0.0
 
             if path is not None and isinstance(path, (LineString, MultiLineString)):
                 if isinstance(path, MultiLineString):
-                    path = linemerge(path)  # Merge MultiLineString into LineString
+                    # linemerge יכול להחזיר LineString או MultiLineString (אם לא ניתן למזג)
+                    merged_path = linemerge(path)
+                    if isinstance(merged_path, LineString):
+                        path = merged_path
+                    # אם עדיין MultiLineString, נצטרך לטפל בכל קו בנפרד או להחליט על אסטרטגיה אחרת.
+                    # כרגע נשאיר את path כפי שהוא אם linemerge לא החזיר LineString יחיד,
+                    # אך זה עלול להשפיע על חישוב החיתוך בהמשך אם combined_shadow_geometry מורכב.
+                    # למען הפשטות כרגע, נניח ש-path הוא LineString או ש-intersection יטפל בזה.
 
-                # Validate and buffer the path slightly to improve intersection accuracy
                 if not path.is_valid:
                     path = path.buffer(0)
 
-                # Step 6: Find the intersection of the path with the combined geometry
-                intersection = shadow_gdf.unary_union.intersection(path)
+                intersection_geom = None
+                if combined_shadow_geometry and path:  # ודא שגם path קיים
+                    try:
+                        intersection_geom = combined_shadow_geometry.intersection(path)
+                    except Exception as e_intersection:
+                        # הדפסת מידע על השגיאה יכולה לעזור בדיבאגינג
+                        print(f"Warning: Failed to calculate intersection for edge {u}-{v}: {e_intersection}")
+                        intersection_geom = None  # ודא שהוא None אם הייתה שגיאה
 
-                # Step 7: Calculate the covered length
-                covered_path_length = 0
-                if isinstance(intersection, LineString):
-                    covered_path_length = intersection.length
-                elif isinstance(intersection, MultiLineString):
-                    covered_path_length = sum(line.length for line in intersection.geoms)
-                elif isinstance(intersection, GeometryCollection):
-                    covered_path_length = sum(
-                        geom.length for geom in intersection.geoms if isinstance(geom, (LineString, MultiLineString)))
+                if intersection_geom and not intersection_geom.is_empty:
+                    if isinstance(intersection_geom, LineString):
+                        covered_path_length = intersection_geom.length
+                    elif isinstance(intersection_geom, MultiLineString):
+                        covered_path_length = sum(line.length for line in intersection_geom.geoms)
+                    elif isinstance(intersection_geom, GeometryCollection):
+                        covered_path_length = sum(
+                            geom.length for geom in intersection_geom.geoms if
+                            isinstance(geom, (LineString, MultiLineString))
+                        )
 
-                # Calculate the length of the path
-                total_path_length = path.length
+                total_path_length = 0.0
+                if path:  # ודא ש-path קיים לפני גישה ל-length
+                    total_path_length = path.length
 
-                # Calculate coverage percentage
                 coverage_percentage = (covered_path_length / total_path_length) * 100 if total_path_length > 0 else 0
-
-                # Add the coverage percentage as an attribute to the edge
                 G[u][v][key]['shadow_coverage'] = coverage_percentage
 
-                # Plot the path
-                x, y = path.xy
-                ax.plot(x, y, color='gray', linestyle='-', linewidth=2, alpha=0.7)
+                if plot and ax and path:  # ודא ש-ax ו-path קיימים
+                    path_x, path_y = path.xy
+                    ax.plot(path_x, path_y, color='gray', linestyle='-', linewidth=2, alpha=0.7)
+                    if intersection_geom and not intersection_geom.is_empty:
+                        if isinstance(intersection_geom, LineString):
+                            int_x, int_y = intersection_geom.xy
+                            ax.plot(int_x, int_y, color='red', linestyle='-', linewidth=3, alpha=0.9)
+                        elif isinstance(intersection_geom, MultiLineString):
+                            for line_geom in intersection_geom.geoms:
+                                int_x, int_y = line_geom.xy
+                                ax.plot(int_x, int_y, color='red', linestyle='-', linewidth=3, alpha=0.9)
 
-                # Plot the covered portion of the path in red
-                if not intersection.is_empty:
-                    if isinstance(intersection, LineString):
-                        x, y = intersection.xy
-                        ax.plot(x, y, color='red', linestyle='-', linewidth=3, alpha=0.9)
-                    elif isinstance(intersection, MultiLineString):
-                        for line in intersection.geoms:
-                            x, y = line.xy
-                            ax.plot(x, y, color='red', linestyle='-', linewidth=3, alpha=0.9)
+        if plot and ax:
+            for idx, building_row in buildings.iterrows():
+                housenumber = building_row.get('addr:housenumber', None)
+                if pd.notna(housenumber):
+                    numeric_housenumber = ''.join(re.findall(r'\d+', str(housenumber)))
+                    if numeric_housenumber and hasattr(building_row.geometry, 'centroid'):  # ודא שיש centroid
+                        centroid = building_row.geometry.centroid
+                        ax.text(centroid.x, centroid.y, numeric_housenumber, fontsize=8, color='black', alpha=0.9,
+                                ha='center')
 
-        # Step 8: Output the results for each path
-        for u, v, key, data in G.edges(keys=True, data=True):
-            coverage = data.get('shadow_coverage', 0)
-            #print(f"Edge {u}-{v}: {coverage:.2f}% covered by shadow/buildings")
+            try:  # הוספת try-except סביב פעולות על ax למקרה שהוא לא תקין
+                x_min, x_max = ax.get_xlim()
+                y_min, y_max = ax.get_ylim()
+                margin = 0.1
+                x_margin = (x_max - x_min) * margin
+                y_margin = (y_max - y_min) * margin
+                ax.set_xlim(x_min - x_margin, x_max + x_margin)
+                ax.set_ylim(y_min - y_margin, y_max + y_margin)
 
-        # Adding numeric house number labels to buildings if available
-        for idx, building in buildings.iterrows():
-            housenumber = building.get('addr:housenumber', None)
-
-            if pd.notna(housenumber):
-                # Extract only the numeric part of the house number
-                numeric_housenumber = ''.join(re.findall(r'\d+', str(housenumber)))
-
-                if numeric_housenumber:  # Only label if a numeric part exists
-                    centroid = building.geometry.centroid
-                    ax.text(centroid.x, centroid.y, numeric_housenumber, fontsize=8, color='black', alpha=0.9,
-                            ha='center')
-
-        x_min, x_max = ax.get_xlim()
-        y_min, y_max = ax.get_ylim()
-
-        # Add a margin to zoom out (e.g., 10% margin)
-        margin = 0.1  # 10% margin
-        x_margin = (x_max - x_min) * margin
-        y_margin = (y_max - y_min) * margin
-
-        # Set new limits with the added margin
-        ax.set_xlim(x_min - x_margin, x_max + x_margin)
-        ax.set_ylim(y_min - y_margin, y_max + y_margin)
-
-        # Add title and labels
-        plt.title("Buildings, Shadows, and Paths at Ben Gurion University", fontsize=20)
-        plt.xlabel("Longitude", fontsize=16)
-        plt.ylabel("Latitude", fontsize=16)
-
-        # Improve visibility of plot grid and background
-        ax.grid(True, linestyle='--', linewidth=0.5)
-
-        # Show the plot
-        plt.tight_layout()
-        if plot:
-            plt.show()
+                ax.set_title("Buildings, Shadows, and Paths at Ben Gurion University", fontsize=20)
+                ax.set_xlabel("Longitude", fontsize=16)
+                ax.set_ylabel("Latitude", fontsize=16)
+                ax.grid(True, linestyle='--', linewidth=0.5)
+                if hasattr(plt, 'tight_layout'):  # בדיקה נוספת
+                    plt.tight_layout()
+                plt.show()
+            except Exception as e_plot_final:
+                print(f"Warning: Error during final plotting stages: {e_plot_final}")
 
     @staticmethod
     def make_new_weights(G):

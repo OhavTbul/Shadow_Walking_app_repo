@@ -289,17 +289,40 @@ def get_shadows_at_time():
         future_azimuth = future_sunloc.azimuth
         future_altitude = future_sunloc.altitude
 
-        if future_azimuth.empty or future_altitude.empty:  # בדיקה אם המידע מהשמש ריק
-            app.logger.warning(
-                "Future sun position data (azimuth/altitude) is empty. Possible issue with SunLocation or nighttime.")
-            empty_gdf = gpd.GeoDataFrame(geometry=[], crs=CRS_WGS84)
-            return jsonify({'shadows': empty_gdf.to_json(), 'requested_time': user_datetime_aware.isoformat(),
-                            'message': 'Could not determine sun position for this time (e.g., deep night). No shadows calculated.'})
+        # בדיקה אם נתוני השמש תקינים (למשל, אם altitude הוא מספר)
+        # והאם השמש מעל האופק
+        sun_is_up = False
+        if not future_azimuth.empty and not future_altitude.empty:
+            current_altitude = future_altitude.iloc[0]
+            app.logger.info(
+                f"Future sun position: Azimuth={future_azimuth.iloc[0]:.2f}, Altitude={current_altitude:.2f}")
+            if current_altitude > 0:  # השמש מעל האופק
+                sun_is_up = True
+            else:
+                app.logger.info("Sun is below horizon.")
+        else:
+            app.logger.warning("Future sun position data (azimuth/altitude) is empty or invalid.")
 
-        # הדפסת לוג תקינה אם המידע אינו ריק
-        app.logger.info(
-            f"Future sun position: Azimuth={future_azimuth.iloc[0]:.2f}, Altitude={future_altitude.iloc[0]:.2f}")
+        if not sun_is_up:  # אם השמש לא למעלה, אין צללים
+            app.logger.info(
+                f"Sun is not up for {user_datetime_aware.isoformat()}. Updating osm.G to have zero shadow coverage.")
+            empty_shadow_gdf_for_analysis = gpd.GeoDataFrame(geometry=[], crs=CRS_UTM)
+            _original_stdout_night = sys.stdout
+            devnull_file_night = open(os.devnull, 'w')
+            sys.stdout = devnull_file_night
+            try:
+                Class_Shadow.analyze_coverage(osm.G, empty_shadow_gdf_for_analysis, osm.Buildings, osm.combined_bounds,
+                                              plot=False)
+            finally:
+                sys.stdout = _original_stdout_night
+                devnull_file_night.close()
+            app.logger.info("osm.G shadow_coverage updated to zero for night time conditions.")
+            empty_gdf_wgs84_for_response = gpd.GeoDataFrame(geometry=[], crs=CRS_WGS84)
+            return jsonify({'shadows': empty_gdf_wgs84_for_response.to_json(),
+                            'requested_time': user_datetime_aware.isoformat(),
+                            'message': 'Night time or sun is below horizon. No shadows calculated.'})
 
+        # אם הגענו לכאן, השמש למעלה ויש לחשב צללים
         temp_buildings_data = osm.Buildings[['geometry', 'height']].copy()
         temp_buildings_data = temp_buildings_data.to_crs(CRS_UTM)
 
@@ -310,29 +333,34 @@ def get_shadows_at_time():
         temp_buildings_with_shadows = temp_buildings_data[temp_buildings_data['calculated_shadow'].notna()].copy()
 
         if temp_buildings_with_shadows.empty:
-            app.logger.info("No shadows generated for the specified future time (e.g. sun position yields no shadows).")
+            app.logger.info("No physical shadows generated (e.g., sun directly overhead or no buildings cast shadows).")
             empty_gdf = gpd.GeoDataFrame(geometry=[], crs=CRS_WGS84)
-            return jsonify({'shadows': empty_gdf.to_json(), 'requested_time': user_datetime_aware.isoformat(),
-                            'message': 'No shadows at this specified time.'})
+            return jsonify({'shadows': empty_gdf.to_json(),
+                            'requested_time': user_datetime_aware.isoformat(),
+                            'message': 'Sun is up, but no shadows were generated for buildings in the area.'})
 
         future_shadow_gdf = gpd.GeoDataFrame(temp_buildings_with_shadows, geometry='calculated_shadow', crs=CRS_UTM)
 
         app.logger.info(f"Updating osm.G shadow_coverage for future time: {user_datetime_aware.isoformat()}")
         _original_stdout = sys.stdout
-        devnull_file_fs = open(os.devnull, 'w')  # שימוש בשם משתנה אחר לקובץ
+        devnull_file_fs = open(os.devnull, 'w')
         sys.stdout = devnull_file_fs
         try:
             Class_Shadow.analyze_coverage(osm.G, future_shadow_gdf, osm.Buildings, osm.combined_bounds, False)
         finally:
             sys.stdout = _original_stdout
-            devnull_file_fs.close()  # סגירת הקובץ הנכון
+            devnull_file_fs.close()
         app.logger.info("osm.G shadow_coverage updated for future time.")
 
         response_gdf = future_shadow_gdf[['calculated_shadow']].copy()
         response_gdf = response_gdf.set_geometry('calculated_shadow').rename_geometry('geometry')
-        response_gdf_wgs84 = response_gdf.to_crs(CRS_WGS84)  # שימוש ב-CRS_WGS84 במקום epsg=
+        response_gdf_wgs84 = response_gdf.to_crs(CRS_WGS84)
 
-        return jsonify({'shadows': response_gdf_wgs84.to_json(), 'requested_time': user_datetime_aware.isoformat()})
+        # אם הגענו לכאן, יש צללים והם חושבו
+        return jsonify({'shadows': response_gdf_wgs84.to_json(),
+                        'requested_time': user_datetime_aware.isoformat()
+                        # אין צורך ב-message אם יש צללים
+                        })
 
     except Exception as e:
         app.logger.error(f"Error in /shadows_at_time endpoint: {e}\n{traceback.format_exc()}")
