@@ -17,7 +17,11 @@
     --orange-focus-ring-color: rgba(251, 191, 36, 0.4); /* טבעת focus בגוון amber-300 */
     --orange-border-color: #FB923C;     /* גבול כתום (למשל, orange-400 של Tailwind) */
     --orange-text-color: #C2410C;       /* צבע טקסט כתום כהה (למשל, orange-800) אם צריך */
+
+    --sheet-expanded-height-default: 60%; /* גובה התחלתי / לטאבים קצרים-בינוניים */
+    --sheet-expanded-height-tall: 85%;
 }
+
 
 html, body {
     margin: 0;

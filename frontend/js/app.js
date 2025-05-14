@@ -53,10 +53,10 @@ function updateUserSpecificFeatures(isLoggedIn) {
     console.log("updateUserSpecificFeatures - isLoggedIn:", isLoggedIn);
 
     const tabCompareButton = document.getElementById('tabCompare');
+    console.log("Inside updateUserSpecificFeatures - tabCompareButton element IS:", tabCompareButton);
     const tabFutureButton = document.getElementById('tabFuture');
     const tabFavoritesButton = document.getElementById('tabFavorites');
 
-    // פקדים פנימיים בטאב מועדפים (יוצגו/יוסתר בהתאם לצורך כשלוחצים על הטאב)
     const favElements = [
         document.getElementById('favOriginNameSheet'),
         document.getElementById('favDestNameSheet'),
@@ -68,16 +68,26 @@ function updateUserSpecificFeatures(isLoggedIn) {
 
     if (isLoggedIn) {
         console.log("User is logged in - showing registered-user tabs and features.");
-        if (tabCompareButton) tabCompareButton.classList.remove('hidden');
-        if (tabFutureButton) tabFutureButton.classList.remove('hidden');
-        if (tabFavoritesButton) tabFavoritesButton.classList.remove('hidden');
 
-        // הנראות של הפקדים בתוך טאב מועדפים תנוהל בעיקר על ידי loadFavorites
-        // אבל נוודא שהם זמינים אם הטאב נבחר
+        if (tabCompareButton) {
+            console.log("tabCompareButton FOUND. Current classes BEFORE remove:", tabCompareButton.classList.toString());
+            tabCompareButton.classList.remove('hidden');
+            console.log("tabCompareButton classes AFTER remove:", tabCompareButton.classList.toString());
+        } else {
+            console.log("tabCompareButton IS NULL - cannot remove 'hidden'.");
+        }
+
+        if (tabFutureButton) {
+            tabFutureButton.classList.remove('hidden');
+        }
+
+        if (tabFavoritesButton) {
+            tabFavoritesButton.classList.remove('hidden');
+        }
+
         favElements.forEach(el => {
             if (el) el.style.display = (el.tagName === 'SELECT' || el.tagName === 'INPUT') ? 'block' : 'inline-block';
         });
-        // loadFavorites יקרא ב-loginSuccess ובלחיצה על טאב מועדפים
 
     } else { // משתמש לא מחובר
         console.log("User is NOT logged in - hiding registered-user tabs and features.");
@@ -86,22 +96,24 @@ function updateUserSpecificFeatures(isLoggedIn) {
 
         tabsToHide.forEach(tabBtn => {
             if (tabBtn) {
-                // אם אחד מהטאבים האלה היה פעיל, העבר לטאב הראשי
                 if (tabBtn.classList.contains('active')) {
                     const tabRouteButton = document.getElementById('tabRoute');
                     if (tabRouteButton && !mainTabActivated) {
-                        tabRouteButton.click(); // העבר פעם אחת לטאב הראשי
-                        mainTabActivated = true;
-                        console.log("User logged out from a restricted tab, switching to Route tab.");
+                        // We'll call click on tabRouteButton after this loop and after setting 'hidden'
+                        mainTabActivated = true; // Mark that we need to switch
+                        console.log("User logged out from a restricted tab, will switch to Route tab.");
                     }
                 }
                 tabBtn.classList.add('hidden');
             }
         });
-        // אם אחרי כל זה, טאב ברירת המחדל (Route) לא פעיל, הפעל אותו
+
         const tabRouteButton = document.getElementById('tabRoute');
-        if(tabRouteButton && !tabRouteButton.classList.contains('active') && !mainTabActivated){
-            tabRouteButton.click();
+        if (mainTabActivated && tabRouteButton && !tabRouteButton.classList.contains('active')) {
+             // Defer click to ensure it happens after all class changes and in a clean stack
+            setTimeout(() => tabRouteButton.click(), 0);
+        } else if (tabRouteButton && !tabRouteButton.classList.contains('active') && !mainTabActivated) {
+            setTimeout(() => tabRouteButton.click(), 0);
         }
 
 
@@ -134,13 +146,6 @@ function loginSuccess(name) {
     }
   }
   updateUserSpecificFeatures(true);
-  // טעינת מועדפים תיקרא אוטומטית אם המשתמש ילחץ על טאב מועדפים
-  // או שאפשר לקרוא לה כאן אם רוצים שהרשימה תהיה מוכנה מראש
-  if (typeof loadFavorites === "function") {
-      // מומלץ לקרוא לזה רק אם טאב מועדפים הוא הטאב הפעיל או משהו כזה,
-      // או פשוט לתת למשתמש ללחוץ על הטאב ואז לטעון.
-      // כרגע נשאיר כך, loadFavorites יטען אם הטאב ייבחר.
-  }
 }
 
 function logout() {
@@ -241,7 +246,7 @@ async function loadFavorites() {
 
   if (!sessionStorage.getItem('currentUser')) {
       console.log("loadFavorites: User not logged in, skipping.");
-      if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Please login to see favorites.", true, 0); // 0 לא למחוק הודעה
+      if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Please login to see favorites.", true, 0);
       return;
   }
   if (!favListSelect || !calcFavBtnSheet || !deleteFavBtnSheet) {
@@ -281,7 +286,6 @@ async function loadFavorites() {
     calcFavBtnSheet.style.display = 'inline-block';
     deleteFavBtnSheet.style.display = 'inline-block';
 
-
     favorites.forEach((f, index) => {
       const opt = document.createElement('option');
       opt.value = index;
@@ -293,11 +297,11 @@ async function loadFavorites() {
 
     if (favorites.length > 0) {
         favListSelect.selectedIndex = 0;
-        selectedFav = favorites[0]; // עדכן את selectedFav כאן
+        selectedFav = favorites[0];
     } else {
         selectedFav = null;
     }
-    calcFavBtnSheet.disabled = !selectedFav; // עדכן את מצב הכפתורים לפי selectedFav
+    calcFavBtnSheet.disabled = !selectedFav;
     deleteFavBtnSheet.disabled = !selectedFav;
 
     if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, `${favorites.length} favorite(s) loaded.`, false);
@@ -341,7 +345,7 @@ async function saveFavorite() {
         if (!res.ok) throw new Error(data.error || `Failed to save favorite.`);
 
         favOriginEl.value = ''; favDestEl.value = '';
-        await loadFavorites(); // זה יעדכן גם את selectedFav ואת הכפתורים
+        await loadFavorites();
         if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Favorite saved successfully!", false);
     } catch (error) {
         console.error("Error saving favorite:", error);
@@ -403,7 +407,6 @@ async function deleteFavorite() {
     }
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded. Initializing app...");
 
@@ -444,71 +447,83 @@ document.addEventListener('DOMContentLoaded', () => {
     const bottomSheetTabsContainer = bottomSheetNode ? bottomSheetNode.querySelector('.bottom-sheet-tabs-container') : null;
 
     if (bottomSheetNode && bottomSheetTabsContainer) {
-        const tabButtons = bottomSheetTabsContainer.querySelectorAll('.tab-button');
-        const tabContentsArea = bottomSheetNode.querySelector('.tab-content-area');
-        const tabContents = tabContentsArea ? tabContentsArea.querySelectorAll(':scope > .tab-content') : [];
+        console.log("All tab buttons found by querySelectorAll (before delegation):", bottomSheetTabsContainer.querySelectorAll('.tab-button'));
 
-        if (tabButtons.length > 0 && tabContents.length > 0) {
-            console.log("BottomSheet: Tab buttons found:", tabButtons.length);
-            console.log("BottomSheet: Tab contents found:", tabContents.length);
+        bottomSheetTabsContainer.addEventListener('click', (event) => {
+            const button = event.target.closest('.tab-button');
 
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    if (button.classList.contains('active') && !button.classList.contains('hidden')) {
-                        console.log("BottomSheet: Clicked tab is already active and visible:", button.id);
-                        return;
-                    }
-                    // אם הכפתור מוסתר (למשתמש לא רשום) - אל תעשה כלום
-                    if (button.classList.contains('hidden')) {
-                        console.log("BottomSheet: Clicked tab is hidden, ignoring:", button.id);
-                        return;
-                    }
-                    console.log("BottomSheet: Clicked tab button:", button.id);
-
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => {
-                        content.classList.remove('active');
-                        content.classList.add('hidden');
-                    });
-
-                    button.classList.add('active');
-                    let contentIdSuffix = button.id.substring(3);
-                    contentIdSuffix = contentIdSuffix.charAt(0).toLowerCase() + contentIdSuffix.slice(1);
-                    const targetContentId = contentIdSuffix + 'TabContent';
-
-                    console.log("BottomSheet: Target content ID:", targetContentId);
-
-                    const targetContent = document.getElementById(targetContentId);
-                    if (targetContent) {
-                        targetContent.classList.remove('hidden');
-                        targetContent.classList.add('active');
-                        console.log("BottomSheet: Activated content:", targetContentId);
-                        // אם זה טאב מועדפים, טען מועדפים אם המשתמש מחובר
-                        if (targetContentId === 'favoritesTabContent' && sessionStorage.getItem('currentUser')) {
-                            console.log("BottomSheet: Switched to Favorites tab, calling loadFavorites().");
-                            loadFavorites();
-                        }
-                    } else {
-                        console.error("BottomSheet: ERROR - Target content element not found for ID:", targetContentId);
-                    }
-                });
-            });
-
-            // הפעלה ראשונית של טאב ברירת המחדל (Calculate Route)
-            const defaultActiveButton = document.getElementById('tabRoute');
-            if (defaultActiveButton) {
-                defaultActiveButton.click(); // מדמה לחיצה כדי להפעיל את הלוגיקה
-                console.log("BottomSheet: Initial default tab 'tabRoute' click triggered.");
-            } else {
-                console.error("BottomSheet: Default tab 'tabRoute' not found for initial activation.");
+            if (!button) {
+                return;
             }
 
-        } else {
-            console.warn("BottomSheet: Tab buttons or tab contents were not found correctly.", tabButtons.length, tabContents.length);
-        }
+            console.log("--- Tab Click Event (Delegated) ---");
+            console.log("Clicked button ID:", button.id);
+            console.log("Button current classList:", button.classList.toString());
+            console.log("Is button 'hidden'?", button.classList.contains('hidden'));
+            console.log("Is button 'active'?", button.classList.contains('active'));
+
+            if (button.classList.contains('active') && !button.classList.contains('hidden')) {
+                console.log("-> Tab is already active and visible. Returning.");
+                return;
+            }
+            if (button.classList.contains('hidden')) {
+                console.log("-> Tab is marked as hidden. Ignoring click. Returning.");
+                return;
+            }
+            console.log("-> Tab is not hidden and not active. Proceeding to switch.");
+
+            const allTabButtonsInContainer = bottomSheetTabsContainer.querySelectorAll('.tab-button');
+            const tabContentsArea = bottomSheetNode.querySelector('.tab-content-area');
+            const tabContents = tabContentsArea ? tabContentsArea.querySelectorAll(':scope > .tab-content') : [];
+
+            allTabButtonsInContainer.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                content.classList.add('hidden');
+            });
+
+            button.classList.add('active');
+            let contentIdSuffix = button.id.substring(3);
+            contentIdSuffix = contentIdSuffix.charAt(0).toLowerCase() + contentIdSuffix.slice(1);
+            const targetContentId = contentIdSuffix + 'TabContent';
+
+            const targetContent = document.getElementById(targetContentId);
+
+
+
+            if (targetContent) {
+                console.log("Target content to display:", targetContentId, "Current classes:", targetContent.classList.toString());
+                targetContent.classList.remove('hidden');
+                targetContent.classList.add('active');
+                console.log("Target content classes AFTER update:", targetContent.classList.toString());
+                if (targetContentId === 'favoritesTabContent' && sessionStorage.getItem('currentUser')) {
+                    console.log("BottomSheet: Switched to Favorites tab, calling loadFavorites().");
+                    loadFavorites();
+                }
+            } else {
+                console.error("BottomSheet: ERROR - Target content element not found for ID:", targetContentId);
+            }
+            console.log("--- End Tab Click Event (Delegated) ---");
+        });
+
+        // הפעלה ראשונית של טאב ברירת המחדל עדיין תצטרך להתבצע בנפרד
+        // אחרי שה-DOM טעון וה-listener של ה-delegation הוצמד.
+        // אפשר לעשות זאת ב-setTimeout קטן כדי לוודא שה-listener של ה-delegation כבר קיים.
+        setTimeout(() => {
+            const defaultActiveButton = document.getElementById('tabRoute');
+            if (defaultActiveButton && !defaultActiveButton.classList.contains('hidden')) {
+                defaultActiveButton.click();
+                console.log("BottomSheet: Initial default tab 'tabRoute' click triggered (after delegation setup).");
+            } else if (defaultActiveButton && defaultActiveButton.classList.contains('hidden')) {
+                 console.warn("BottomSheet: Default tab 'tabRoute' is hidden, cannot trigger click (after delegation setup).");
+            } else {
+                console.error("BottomSheet: Default tab 'tabRoute' not found for initial activation (after delegation setup).");
+            }
+        }, 0); // אפילו setTimeout עם 0 יעזור לדחות לסוף ה-event loop הנוכחי
     } else {
         console.warn("BottomSheet: Essential elements (.bottom-sheet-tabs-container or #bottomSheet) not found.");
     }
+
 
     // --- בדיקת משתמש מחובר בטעינת עמוד (אחרי הגדרת הטאבים) ---
     const storedUser = sessionStorage.getItem('currentUser');
@@ -564,7 +579,7 @@ function setupMapDependentListeners() {
         console.log("mapManager found, setting up listeners for bottom sheet controls.");
 
         const setPointsBtnExpanded = document.getElementById('setPointsBtnExpanded');
-        const compareBtnSheetButton = document.getElementById('compareRoutesBtnSheet'); // שיניתי שם משתנה
+        const compareBtnSheetButton = document.getElementById('compareRoutesBtnSheet');
         const shadeSlider = document.getElementById('shadeSliderSheet');
         const setPointsBtnSheet = document.getElementById('setPointsBtnSheet');
         const futureDateInput = document.getElementById('futureDate');
@@ -592,12 +607,10 @@ function setupMapDependentListeners() {
                 const bottomSheet = document.getElementById('bottomSheet');
                 const handle = bottomSheet ? bottomSheet.querySelector('.sheet-handle') : null;
                 if (bottomSheet && handle && !bottomSheet.classList.contains('expanded')) {
-                     // קריאה לפונקציה גלובלית שמטפלת בפתיחה/סגירה אם bottomSheet.js מגדיר אותה כך
-                     // או שימוש ישיר ב-classList.toggle('expanded') אם bottomSheet.js רק מוסיף את המאזין
-                     if (typeof toggleBottomSheet === 'function') { // אם יש לך פונקציה גלובלית כזו
+                     if (typeof toggleBottomSheet === 'function') {
                         toggleBottomSheet();
                      } else if (bottomSheet){
-                        bottomSheet.classList.add('expanded'); // אם לא, פשוט פתח
+                        bottomSheet.classList.add('expanded');
                      }
                 }
                 const tabRouteButton = document.getElementById('tabRoute');
@@ -607,7 +620,7 @@ function setupMapDependentListeners() {
                 window.mapManager.togglePointSetting();
             });
         }
-        if (compareBtnSheetButton) { // שימוש בשם המשתנה החדש
+        if (compareBtnSheetButton) {
             compareBtnSheetButton.addEventListener('click', () => {
                 const comparisonDisplaySection = document.getElementById('comparisonSectionSheet');
                 if (window.mapManager && window.mapManager.startPointCoords && window.mapManager.endPointCoords) {
@@ -714,3 +727,6 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+
+

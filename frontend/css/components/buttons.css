@@ -1,148 +1,219 @@
+/* css/components/buttons.css */
 
-/* סגנון בסיסי לכל הכפתורים (אם רוצים הגדרה כללית) /
+/* סגנון בסיסי לכל הכפתורים (אם רוצים הגדרה כללית) */
 button {
-padding: 10px 20px; / ברירת מחדל, יידרס על ידי קלאסים ספציפיים יותר /
-font-size: 14px;
-font-weight: 500;
-border: none;
-border-radius: 8px;
-cursor: pointer;
-transition: all 0.2s ease; / ברירת מחדל /
-background: var(--primary-color); / ברירת מחדל /
-color: white; / ברירת מחדל /
-display: flex; / אם רוצים אייקון וטקסט ביחד */
-align-items: center;
-gap: 8px;
+    padding: 10px 15px; /* התאמה קלה מהמקור שהיה 10px 20px, יותר מתאים לכפתורים קטנים יותר */
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px; /* 0.5rem */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--orange-main-color); /* ברירת מחדל - יידרס על ידי .button-gradient */
+    color: white;
+    display: inline-flex; /* שינוי ל-inline-flex כדי שהכפתור יתפוס רק את הרוחב הנחוץ */
+    align-items: center;
+    justify-content: center; /* מרכוז התוכן אם הכפתור רחב יותר מהטקסט */
+    gap: 8px;
+    text-align: center; /* למקרה שה-display לא flex */
+    line-height: 1.2; /* לוודא שהטקסט לא צפוף מדי */
 }
 
-button:hover {
-    background: var(--primary-hover); /* ברירת מחדל */
-    transform: translateY(-1px); /* ברירת מחדל */
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); /* ברירת מחדל */
+button:hover:not(:disabled) { /* :not(:disabled) כדי לא להחיל hover על כפתורים מנוטרלים */
+    background: var(--orange-hover-color); /* יידרס על ידי .button-gradient:hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 button:disabled {
-    background: #94a3b8;
+    background-color: #cbd5e1; /* צבע אפור בהיר יותר ל-disabled */
+    color: #64748b; /* טקסט אפור כהה יותר */
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+    opacity: 0.7; /* לתת תחושה של מנוטרל */
 }
 
 /* כפתור סכנה - אם רוצים קלאס כללי */
 .danger-btn {
-    background: var(--danger-color) !important; /* !important אם יש התנגשויות */
+    background: var(--danger-color) !important; /* !important כדי לדרוס רקע אחר אם יש */
     color: white;
 }
-.danger-btn:hover {
+.danger-btn:hover:not(:disabled) {
     background: var(--danger-hover) !important;
 }
 
-/* כפתורי גרדיאנט */
+/* --- כפתורי גרדיאנט --- */
 .button-gradient {
   color: white;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  padding: 0.625rem 1.25rem;
+  font-weight: 500; /* כבר מוגדר ב-button הכללי, אבל אפשר להשאיר ליתר ביטחון */
+  border-radius: 0.5rem; /* 8px */
+  font-size: 0.875rem; /* 14px */
+  padding: 0.625rem 1.25rem; /* 10px 20px - אפשר להתאים אם רוצים אחידות עם button כללי */
   text-align: center;
   border: none;
   cursor: pointer;
-  transition: background-image 0.3s ease, box-shadow 0.2s ease;
-  /* מסיר את ה-background וה-color מההגדרה הכללית של button */
-  background: none;
+  transition: background-image 0.3s ease, box-shadow 0.2s ease, transform 0.2s ease; /* הוספת transform ל-transition */
+  background-image: none; /* ברירת מחדל כדי ש-background-color לא יפריע */
+  /* background: none; /* מסיר את ה-background מההגדרה הכללית של button, הגרדיאנט יחליף אותו */
+  /* מסיר את background-color מההגדרה הכללית של button */
 }
 
-.button-gradient:focus {
+.button-gradient:hover:not(:disabled) {
+    transform: translateY(-1px); /* הוספת transform ל-hover גם לגרדיאנט */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* צל מעט מודגש יותר לגרדיאנט */
+    /* הרקע של ה-hover מוגדר בקלאסים הספציפיים של הגרדיאנט */
+}
+
+
+.button-gradient:focus, .button-gradient:focus-visible { /* הוספת focus-visible לנגישות */
   outline: none;
+  /* ה-box-shadow של הפוקוס יוגדר בקלאסים הספציפיים */
 }
 
-.button-auth-primary { /* סגול לכחול */
+/* גרדיאנט כחול-סגול (לאימות) */
+.button-auth-primary {
   background-image: linear-gradient(to bottom right, #7C3AED, #3B82F6);
 }
-.button-auth-primary:hover {
+.button-auth-primary:hover:not(:disabled) {
   background-image: linear-gradient(to bottom left, #7C3AED, #3B82F6);
 }
-.button-auth-primary:focus {
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+.button-auth-primary:focus, .button-auth-primary:focus-visible {
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4); /* טבעת focus כחולה */
 }
 
-.button-auth-logout { /* ורוד לכתום */
-  background-image: linear-gradient(to bottom right, #EC4899, #F97316);
+/* גרדיאנט ורוד-כתום (ל-Logout) */
+.button-auth-logout {
+  background-image: linear-gradient(to bottom right, #EC4899, var(--orange-main-color, #F97316));
 }
-.button-auth-logout:hover {
-  background-image: linear-gradient(to bottom left, #EC4899, #F97316);
+.button-auth-logout:hover:not(:disabled) {
+  background-image: linear-gradient(to bottom left, #EC4899, var(--orange-main-color, #F97316));
 }
-.button-auth-logout:focus {
-  box-shadow: 0 0 0 4px rgba(251, 175, 192, 0.4);
+.button-auth-logout:focus, .button-auth-logout:focus-visible {
+  box-shadow: 0 0 0 4px rgba(251, 175, 192, 0.4); /* טבעת focus ורודה-כתומה */
 }
 
-/* סגנונות ספציפיים לכפתורים אחרים */
-.set-points-button { /* אם יש לו מאפיינים ייחודיים מעבר לברירת המחדל */
-    /* background-color: #2563eb; כבר מכוסה על ידי button או button-gradient */
-    font-weight: bold; /* זה ייחודי */
-    min-width: 160px; /* אם עדיין רלוונטי */
-    justify-content: center; /* אם עדיין רלוונטי */
+/* === קלאס גרדיאנט כתום ראשי === */
+.button-gradient-orange {
+  background-image: linear-gradient(to bottom right, var(--orange-main-color, #F97316), var(--orange-secondary-color, #FBBF24));
+}
+.button-gradient-orange:hover:not(:disabled) {
+  background-image: linear-gradient(to bottom left, var(--orange-main-color, #F97316), var(--orange-secondary-color, #FBBF24));
+  /* אפשר להכהות מעט את הגוונים ב-hover אם רוצים */
+  /* background-image: linear-gradient(to bottom left, var(--orange-hover-color, #EA580C), var(--orange-main-color, #F97316)); */
+}
+.button-gradient-orange:focus, .button-gradient-orange:focus-visible {
+  box-shadow: 0 0 0 4px var(--orange-focus-ring-color, rgba(251, 191, 36, 0.4));
+}
+
+
+/* --- סגנונות ספציפיים לכפתורים בשימוש באפליקציה --- */
+
+/* כפתורים בתוך ה-BottomSheet */
+.sheet-button {
+    padding: 8px 15px; /* ברירת מחדל לכפתורים בתוך ה-sheet, יידרס על ידי .button-gradient אם שניהם בשימוש */
+    margin: 5px; /* מרווח כללי, אפשר להשתמש ב-gap על ה-parent אם הוא flex */
+    /* אם רוצים שירשו את סגנון הגרדיאント, ומוסיפים את .button-gradient,
+       אז אין צורך להגדיר כאן background-color כללי.
+       ההגדרה הכללית של 'button' תיתן להם צבע ברירת מחדל אם הם רק .sheet-button. */
+}
+
+/* לדוגמה, אם יש כפתור שהוא גם sheet-button וגם button-gradient-orange: */
+/* class="sheet-button button-gradient button-gradient-orange" */
+/* ה-padding של button-gradient (10px 20px) יהיה חזק יותר מה-padding של sheet-button (8px 15px) בגלל סדר הקלאסים או ספציפיות. */
+/* אם רוצים שה-padding של sheet-button יהיה הדומיננטי, צריך לוודא שהסלקטור שלו יותר ספציפי או להשתמש ב-!important (לא מומלץ). */
+/* פתרון טוב יותר הוא להחליט על padding אחיד לכפתורי גרדיאנט, או להסיר את ה-padding מ-.sheet-button */
+/* ולהשאיר רק margins אם צריך, ולתת ל-.button-gradient לקבוע את ה-padding. */
+
+.sheet-button.button-gradient { /* התאמת padding לכפתורי גרדיאנט בתוך ה-sheet אם רוצים שיהיה להם padding שונה */
+    padding: 0.625rem 1.25rem; /* 10px 20px - כמו button-gradient כללי */
+}
+
+
+/* כפתור Set/Clear Points */
+.set-points-button { /* אם עדיין בשימוש וצריך סגנון ייחודי */
+    font-weight: bold;
+    /* min-width: 160px; אם נדרש */
+    /* justify-content: center; אם נדרש */
 }
 
 .set-points-button.active {
-    background-color: var(--danger-color); /* זה דורס את הגרדיאנט, אולי עדיף קלאס אחר? */
-    /* אם רוצים לשמור על גרדיאנט גם במצב active, צריך להגדיר לו גרדיאנט אחר */
+    background-color: var(--danger-color) !important; /* דורס רקע אחר, כולל גרדיאנט */
+    background-image: none !important; /* חשוב להסיר גרדיאנט אם יש */
+    color: white;
+}
+.set-points-button.active:hover:not(:disabled) {
+    background-color: var(--danger-hover) !important;
 }
 
-.sheet-button { /* כפתורים בתוך ה-bottom sheet - אם הם צריכים עיצוב שונה */
-    padding: 8px 15px;
-    margin-right: 10px; /* או gap אם משתמשים ב-flex */
-    margin-bottom: 10px;
-    /* אם רוצים שירשו את סגנון הגרדיאנט, לא צריך להגדיר כאן background */
-}
 
-/* כפתורי טאבים (אם רוצים לשנות אותם מכפתורים רגילים) */
+/* כפתורי טאבים (Tabs) */
 .tab-button {
-  padding: 10px 20px;
-  background: var(--background); /* לא גרדיאנט */
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
-  /* ... שאר המאפיינים הקיימים שלך ... */
-}
-.tab-button.active {
-  background: var(--primary-color); /* לא גרדיאנט */
-  color: white;
-}
-.tab-button:hover {
-  background: var(--primary-hover); /* לא גרדיאנט */
-  color: white;
+  padding: 8px 16px; /* התאמת padding */
+  background: transparent; /* רקע שקוף לטאבים לא פעילים */
+  border: 1px solid var(--orange-border-color); /* גבול עדין */
+  color: var(--orange-secondary-color);
+  border-radius: 6px; /* רדיוס קטן יותר */
+  font-weight: 500;
+  /* display: inline-flex; כבר בירושה מ-button */
+  /* align-items: center; כבר בירושה מ-button */
+  /* justify-content: center; כבר בירושה מ-button */
+  /* gap: 8px; כבר בירושה מ-button */
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* כפתור סגירת מודאל */
+.tab-button.active {
+  background: var(--orange-main-color);
+  color: white;
+  border-color: var(--orange-main-color);
+  font-weight: 600; /* הדגשת הטאב הפעיל */
+}
+
+.tab-button:hover:not(.active):not(:disabled) {
+  background: var(--orange-hover-color);
+  color: white;
+  border-color: var(--orange-hover-color);
+}
+.tab-button:focus, .tab-button:focus-visible {
+    outline: 2px solid var(--orange-main-color);
+    outline-offset: 2px;
+}
+
+
+/* כפתור סגירת מודאל (ללא שינוי מהקוד שלך, נראה טוב) */
 .auth-modal-close-btn {
   color: #aaa;
-  position: absolute; /* זה חשוב שיהיה כאן אם הוא תלוי ב-auth-modal-content */
+  position: absolute;
   top: 10px;
   right: 20px;
   font-size: 28px;
   font-weight: bold;
-  background: none !important; /* לוודא שאין לו רקע של כפתור רגיל */
-  padding: 0; /* אולי לא צריך padding */
-  /* אין לו border-radius או box-shadow של כפתור רגיל */
+  background: none !important;
+  padding: 0;
+  border: none; /* לוודא שאין לו גבול של כפתור */
+  border-radius: 0; /* לוודא שאין לו רדיוס של כפתור */
+  box-shadow: none; /* לוודא שאין לו צל של כפתור */
+  transform: none; /* לוודא שאין לו transform של כפתור */
 }
 .auth-modal-close-btn:hover,
 .auth-modal-close-btn:focus {
   color: black;
   text-decoration: none;
   cursor: pointer;
-  background: none !important;
-  transform: none;
-  box-shadow: none;
+  background: none !important; /* לוודא שאין שינוי רקע ב-hover */
 }
 
-/* === קלאס חדש לגרדיאנט כתום === */
-.button-gradient-orange {
-  background-image: linear-gradient(to bottom right, #F97316, #FBBF24); /* קירוב ל-orange-600 to amber-400 */
+/* כפתור קטן עם אייקון (למשל, כפתור הסגירה של השוואת מסלולים) */
+.small-icon-button {
+    padding: 6px 8px !important; /* דריסת padding אם צריך */
+    font-size: 1.2em; /* לגודל האייקון */
+    line-height: 1;
+    min-width: auto; /* לבטל min-width אם יש */
+    background-color: transparent;
+    color: var(--orange-secondary-color);
+    border: 1px solid var(--orange-border-color);
 }
-.button-gradient-orange:hover {
-  background-image: linear-gradient(to bottom left, #F97316, #FBBF24);
+.small-icon-button:hover:not(:disabled) {
+    background-color: var(--orange-border-color);
+    color: var(--orange-text-color);
 }
-.button-gradient-orange:focus {
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.4); /* קירוב ל-focus:ring-amber-300 */
-}
-```

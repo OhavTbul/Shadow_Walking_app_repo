@@ -11,6 +11,7 @@ display: none !important; /* !important כדי לדרוס כל display אחר */
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 2000; /* מאוד גבוה, מעל הכל */
+    pointer-events: none;
     background: rgba(255, 255, 255, 0.9);
     padding: 20px;
     border-radius: 12px;
