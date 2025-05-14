@@ -1,0 +1,148 @@
+
+/* סגנון בסיסי לכל הכפתורים (אם רוצים הגדרה כללית) /
+button {
+padding: 10px 20px; / ברירת מחדל, יידרס על ידי קלאסים ספציפיים יותר /
+font-size: 14px;
+font-weight: 500;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+transition: all 0.2s ease; / ברירת מחדל /
+background: var(--primary-color); / ברירת מחדל /
+color: white; / ברירת מחדל /
+display: flex; / אם רוצים אייקון וטקסט ביחד */
+align-items: center;
+gap: 8px;
+}
+
+button:hover {
+    background: var(--primary-hover); /* ברירת מחדל */
+    transform: translateY(-1px); /* ברירת מחדל */
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); /* ברירת מחדל */
+}
+
+button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* כפתור סכנה - אם רוצים קלאס כללי */
+.danger-btn {
+    background: var(--danger-color) !important; /* !important אם יש התנגשויות */
+    color: white;
+}
+.danger-btn:hover {
+    background: var(--danger-hover) !important;
+}
+
+/* כפתורי גרדיאנט */
+.button-gradient {
+  color: white;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: background-image 0.3s ease, box-shadow 0.2s ease;
+  /* מסיר את ה-background וה-color מההגדרה הכללית של button */
+  background: none;
+}
+
+.button-gradient:focus {
+  outline: none;
+}
+
+.button-auth-primary { /* סגול לכחול */
+  background-image: linear-gradient(to bottom right, #7C3AED, #3B82F6);
+}
+.button-auth-primary:hover {
+  background-image: linear-gradient(to bottom left, #7C3AED, #3B82F6);
+}
+.button-auth-primary:focus {
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+}
+
+.button-auth-logout { /* ורוד לכתום */
+  background-image: linear-gradient(to bottom right, #EC4899, #F97316);
+}
+.button-auth-logout:hover {
+  background-image: linear-gradient(to bottom left, #EC4899, #F97316);
+}
+.button-auth-logout:focus {
+  box-shadow: 0 0 0 4px rgba(251, 175, 192, 0.4);
+}
+
+/* סגנונות ספציפיים לכפתורים אחרים */
+.set-points-button { /* אם יש לו מאפיינים ייחודיים מעבר לברירת המחדל */
+    /* background-color: #2563eb; כבר מכוסה על ידי button או button-gradient */
+    font-weight: bold; /* זה ייחודי */
+    min-width: 160px; /* אם עדיין רלוונטי */
+    justify-content: center; /* אם עדיין רלוונטי */
+}
+
+.set-points-button.active {
+    background-color: var(--danger-color); /* זה דורס את הגרדיאנט, אולי עדיף קלאס אחר? */
+    /* אם רוצים לשמור על גרדיאנט גם במצב active, צריך להגדיר לו גרדיאנט אחר */
+}
+
+.sheet-button { /* כפתורים בתוך ה-bottom sheet - אם הם צריכים עיצוב שונה */
+    padding: 8px 15px;
+    margin-right: 10px; /* או gap אם משתמשים ב-flex */
+    margin-bottom: 10px;
+    /* אם רוצים שירשו את סגנון הגרדיאנט, לא צריך להגדיר כאן background */
+}
+
+/* כפתורי טאבים (אם רוצים לשנות אותם מכפתורים רגילים) */
+.tab-button {
+  padding: 10px 20px;
+  background: var(--background); /* לא גרדיאנט */
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  /* ... שאר המאפיינים הקיימים שלך ... */
+}
+.tab-button.active {
+  background: var(--primary-color); /* לא גרדיאנט */
+  color: white;
+}
+.tab-button:hover {
+  background: var(--primary-hover); /* לא גרדיאנט */
+  color: white;
+}
+
+/* כפתור סגירת מודאל */
+.auth-modal-close-btn {
+  color: #aaa;
+  position: absolute; /* זה חשוב שיהיה כאן אם הוא תלוי ב-auth-modal-content */
+  top: 10px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  background: none !important; /* לוודא שאין לו רקע של כפתור רגיל */
+  padding: 0; /* אולי לא צריך padding */
+  /* אין לו border-radius או box-shadow של כפתור רגיל */
+}
+.auth-modal-close-btn:hover,
+.auth-modal-close-btn:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+  background: none !important;
+  transform: none;
+  box-shadow: none;
+}
+
+/* === קלאס חדש לגרדיאנט כתום === */
+.button-gradient-orange {
+  background-image: linear-gradient(to bottom right, #F97316, #FBBF24); /* קירוב ל-orange-600 to amber-400 */
+}
+.button-gradient-orange:hover {
+  background-image: linear-gradient(to bottom left, #F97316, #FBBF24);
+}
+.button-gradient-orange:focus {
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.4); /* קירוב ל-focus:ring-amber-300 */
+}
+```

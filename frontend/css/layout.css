@@ -1,0 +1,144 @@
+/* כללי למפה */
+#map {
+    height: 100%;
+    border-radius: 12px;
+    margin: 0 20px; /* אולי שייך ל- map.css? תלוי אם זה חלק מהפריסה הכללית או ספציפי למפה */
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* כותרת ראשית */
+.title {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    position: relative; /* חשוב אם יש אלמנטים absolute בתוכו */
+    z-index: 500; /* אם הכותרת צריכה להיות מעל דברים מסוימים */
+}
+
+.title h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.description {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 15px;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+.bgu-logo { /* סגנון ללוגו שהיה בכותרת */
+  height: 40px;
+  max-height: 40px;
+  width: auto;
+  object-fit: contain;
+  align-self: center; /* אם title-content הוא flex */
+}
+
+@media (max-width: 600px) {
+  .bgu-logo {
+    height: 30px;
+  }
+}
+
+/* סגנונות בסיסיים ל-BottomSheet - החלק של המבנה הכללי */
+#bottomSheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
+    transition: transform 0.35s ease-in-out;
+    --sheet-collapsed-height: 90px;
+    --sheet-expanded-height: 80%;
+    height: var(--sheet-expanded-height);
+    transform: translateY(calc(100% - var(--sheet-collapsed-height)));
+    z-index: 1000;
+}
+
+#bottomSheet.expanded {
+    transform: translateY(calc(100% - var(--sheet-expanded-height)));
+}
+
+#bottomSheet.hidden { /* אם את משתמשת בזה */
+    transform: translateY(100%);
+}
+
+.sheet-handle {
+    padding: 10px 0;
+    cursor: grab;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.handle-bar {
+    width: 45px;
+    height: 5px;
+    background-color: #d1d5db;
+    border-radius: 3px;
+}
+
+.sheet-content { /* כללי לתוכן ב-bottom sheet */
+    overflow-y: auto;
+    max-height: calc(100% - 40px); /* התאימי לפי גובה הידית */
+    padding: 0 20px 20px 20px;
+}
+
+.expanded-content { display: none; } /* לוגיקת הצגת תוכן מכווץ/מורחב */
+.collapsed-content { display: block; }
+
+#bottomSheet.expanded .expanded-content { display: block; }
+#bottomSheet.expanded .collapsed-content { display: none; }
+
+.control-section { /* מבנה פנימי ב-bottom sheet */
+    margin-top: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+.control-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.control-section h2, .control-section h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--primary-color);
+}
+
+@media (max-width: 600px) { /* התאמות ל-bottom sheet במסכים קטנים */
+    #bottomSheet {
+        --sheet-collapsed-height: 80px;
+        --sheet-expanded-height: 75%;
+    }
+    .sheet-content {
+        padding: 0 15px 15px 15px;
+    }
+}
+
+/* סגנונות ל-Top Bar (לאחר התחברות) */
+ #topBar {
+   display: flex; /* או none אם הוא מוסתר בתחילה על ידי JS */
+   justify-content: center;
+   align-items: center;
+   gap: 10px;
+   background: white;
+   padding: 12px;
+   font-size: 18px;
+   font-weight: 500;
+   color: var(--text-primary);
+   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+   position: sticky; /* אם רוצים שיישאר דביק למעלה */
+   top: 0;
+   z-index: 1000; /* צריך להיות נמוך יותר מהמודאל */
+ }
+

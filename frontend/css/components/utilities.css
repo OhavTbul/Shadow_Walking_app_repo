@@ -1,0 +1,74 @@
+
+.hidden {
+display: none !important; /* !important כדי לדרוס כל display אחר */
+}
+
+/* Loading Spinner (גדול יותר, למרכז המסך) */
+.loading-spinner {
+    display: none; /* מוסתר בתחילה, JS יפעיל עם .active */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000; /* מאוד גבוה, מעל הכל */
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+.loading-spinner.active { /* JS יוסיף את הקלאס .active */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+.loading-spinner .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+.loading-spinner .message {
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+/* Error Message (למעלה במרכז) */
+.error-message {
+    display: none; /* מוסתר בתחילה, JS יפעיל עם .active */
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--danger-color);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    z-index: 2000; /* מאוד גבוה */
+    font-size: 14px;
+    animation: slideDown 0.3s ease; /* @keyframes slideDown צריך להיות מוגדר */
+}
+.error-message.active { /* JS יוסיף את הקלאס .active */
+    display: block;
+}
+
+/* אנימציות (אם לא מוגדרות במקום אחר) */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse { /* אם עדיין בשימוש */
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes slideDown { /* אם עדיין בשימוש */
+    from { transform: translate(-50%, -100%); }
+    to { transform: translate(-50%, 0); }
+}
+```

@@ -1,0 +1,30 @@
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger-color: #ef4444;
+    --danger-hover: #dc2626;
+    --background: #f8fafc;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+
+
+    /* === משתני צבע כתומים === */
+    --orange-accent-color: #F97316;
+    --orange-main-color: #F97316;       /* כתום ראשי (למשל, orange-600 של Tailwind) */
+    --orange-hover-color: #EA580C;      /* כתום ל-hover (למשל, orange-700 של Tailwind) */
+    --orange-secondary-color: #FBBF24;  /* כתום משני/בהיר יותר (למשל, amber-400 של Tailwind) */
+    --orange-focus-ring-color: rgba(251, 191, 36, 0.4); /* טבעת focus בגוון amber-300 */
+    --orange-border-color: #FB923C;     /* גבול כתום (למשל, orange-400 של Tailwind) */
+    --orange-text-color: #C2410C;       /* צבע טקסט כתום כהה (למשל, orange-800) אם צריך */
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+    font-family: 'Inter', sans-serif; /* שקלי אם להשאיר כאן או להעביר ל- typography.css */
+    background: var(--background);
+    color: var(--text-primary);
+}
+
+/* אפשר להוסיף כאן גם CSS Reset בסיסי אם רוצים */

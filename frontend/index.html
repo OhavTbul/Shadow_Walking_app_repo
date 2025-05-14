@@ -4,14 +4,20 @@
   <meta charset="utf-8">
   <title>Shadow Route Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components/buttons.css">
+  <link rel="stylesheet" href="css/components/forms.css">
+  <link rel="stylesheet" href="css/components/map.css">
+  <link rel="stylesheet" href="css/components/navigation.css">
+  <link rel="stylesheet" href="css/components/utilities.css">
   <link rel="stylesheet" href="css/comparison.css">
-  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-  </head>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js" defer></script>
+</head>
 <body>
 
 <div class="title">
@@ -20,21 +26,26 @@
     <h1>Shadow Route Planner</h1>
   </div>
   <div class="description">Find the optimal walking route based on sun exposure and shadow coverage</div>
-    <div id="shadowUpdateTimeDisplay" style="text-align: center; font-size: 0.8em; color: var(--text-secondary); margin-top: 5px;">
-  </div>
+  <div id="shadowUpdateTimeDisplay" style="text-align: center; font-size: 0.8em; color: var(--text-secondary); margin-top: 5px;">
+    </div>
+  <button type="button" id="openAuthModalBtn" class="button-gradient button-gradient-orange" style="margin-left: auto; margin-right: 20px;">
+    Login / Signup
+  </button>
 </div>
 
-<div class="auth-container" id="authContainer">
+<div class="auth-modal" id="authModalContainer" style="display: none;">
+ <div class="auth-modal-content">
+     <span class="auth-modal-close-btn" id="authModalCloseBtn">&times;</span>
   <div class="auth-card">
     <div class="auth-tabs">
-      <button id="loginTab" class="tab-button active">Login</button>
-      <button id="registerTab" class="tab-button">Register</button>
+      <button id="loginTab" class="button-gradient button-gradient-orange active">Login</button>
+      <button id="registerTab" class="button-gradient button-gradient-orange">Register</button>
     </div>
     <form id="loginForm">
       <h2>Login</h2>
       <input type="email" id="loginEmail" placeholder="Email" required><br>
       <input type="password" id="loginPassword" placeholder="Password" required><br>
-      <button type="submit">Login</button>
+      <button type="submit" class="button-gradient button-gradient-orange">Login</button>
     </form>
     <form id="registerForm" style="display:none;">
       <h2>Register</h2>
@@ -42,13 +53,15 @@
       <input type="text" id="regLastName" placeholder="Last Name" required><br>
       <input type="email" id="regEmail" placeholder="Email" required><br>
       <input type="password" id="regPassword" placeholder="Password" required><br>
-      <button type="submit">Register</button>
+      <button type="submit" class="button-gradient button-gradient-orange">Register</button>
     </form>
     <div id="message"></div>
   </div>
 </div>
+</div>
 
-<div id="topBar" class="hidden"></div>
+<div id="topBar" class="hidden">
+    </div>
 
 <div id="map"></div>
 
@@ -58,65 +71,83 @@
     </div>
 
     <div class="sheet-content collapsed-content">
-        <h4>מצא מסלול מוצל</h4>
-        <button id="setPointsBtnSheet" class="sheet-button">קבע נקודות מוצא ויעד</button>
+        <h4>Find a Shaded Route</h4>
+        <button id="setPointsBtnSheet" class="sheet-button">Set Start & Destination</button>
     </div>
 
     <div class="sheet-content expanded-content">
-        <h2>פקדים והגדרות</h2>
+        <div class="bottom-sheet-tabs-container" role="group">
+            <button type="button" id="tabRoute" class="tab-button active">Calculate Route</button>
+            <button type="button" id="tabCompare" class="tab-button hidden">Compare Routes</button>
+            <button type="button" id="tabFuture" class="tab-button hidden">Future Planning</button>
+            <button type="button" id="tabFavorites" class="tab-button hidden">Favorite Routes</button>
+        </div>
 
-        <div class="control-section">
-            <h3>תכנון מסלול</h3>
-            <button id="setPointsBtnExpanded" class="sheet-button">קבע/נקה נקודות</button>
-            <button id="compareRoutesBtnSheet" class="sheet-button" title="השווה מסלולים עם העדפות צל שונות">השווה מסלולים</button>
-            <div class="slider-group">
-                <label for="shadeSliderSheet">העדפת צל:</label>
-                 <input type="range" min="0.1" max="10" step="0.1" value="1" id="shadeSliderSheet">
-                <span id="shadeValueDisplaySheet">1.0</span>
+        <div class="tab-content-area">
+            <div id="routeTabContent" class="tab-content active">
+                <div class="control-section">
+                    <h3>Current Route Planning</h3>
+                    <button id="setPointsBtnExpanded" class="sheet-button">Set/Clear Points</button>
+                    <div class="slider-group" style="margin-top: 15px;">
+                        <label for="shadeSliderSheet">Shade Preference:</label>
+                        <input type="range" min="0.1" max="10" step="0.1" value="1" id="shadeSliderSheet">
+                        <span id="shadeValueDisplaySheet">1.0</span>
+                    </div>
+                </div>
+                <div class="control-section hidden" id="routeInfoSectionSheet">
+                     <h3>Route Details</h3>
+                     <p>Distance: <span id="routeDistance">...</span></p>
+                     <p>Est. Time: <span id="routeTime">...</span></p>
+                     <p>Nodes: <span id="routeNodes">...</span></p>
+                </div>
             </div>
-        </div>
 
-        <div id="comparisonSectionSheet" class="control-section hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3>השוואת מסלולים</h3>
-                <button id="closeComparisonBtn" class="sheet-button small-icon-button" title="סגור השוואה">&times;</button>
-        </div>
-            <div id="comparisonStatsDisplay">
-        </div>
-        </div>
-
-         <div id="futurePlanningSection" class="control-section hidden">
-            <h3>תכנון עתידי</h3>
-            <div>
-                <label for="futureDate">תאריך:</label>
-                <input type="date" id="futureDate" class="sheet-input">
+            <div id="compareTabContent" class="tab-content hidden">
+                <div class="control-section">
+                    <h3>Compare Routes</h3>
+                    <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">Compare routes with different shade preferences to find your perfect balance.</p>
+                    <button id="compareRoutesBtnSheet" class="sheet-button" title="Compare routes with different shade preferences">Start Route Comparison</button>
+                    <div id="comparisonSectionSheet" class="hidden" style="margin-top:15px; padding-top:15px; border-top: 1px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4>Comparison Results</h4>
+                            <button id="closeComparisonBtn" class="sheet-button small-icon-button" title="Close Comparison">&times;</button>
+                        </div>
+                        <div id="comparisonStatsDisplay">
+                            </div>
+                    </div>
+                </div>
             </div>
-            <div style="margin-top: 8px;">
-                <label for="futureTime">שעה:</label> <input type="time" id="futureTime" step="900" class="sheet-input">
+
+            <div id="futureTabContent" class="tab-content hidden">
+                 <div id="futurePlanningSection" class="control-section">
+                    <h3>Shadow Planning for a Future Time</h3>
+                    <div>
+                        <label for="futureDate">Date:</label>
+                        <input type="date" id="futureDate" class="sheet-input">
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <label for="futureTime">Time:</label> <input type="time" id="futureTime" step="900" class="sheet-input">
+                    </div>
+                    <button id="applyFuturePlanBtn" class="sheet-button" style="margin-top: 10px;">Show Future Shadows</button>
+                    <button id="resetToNowBtn" class="sheet-button danger-btn" style="margin-top: 10px; display:none;">Reset to Current Time</button>
+                    <p id="planningStatus" style="font-size: 0.9em; color: var(--text-primary); margin-top: 8px;"></p>
+                </div>
             </div>
-            <button id="applyFuturePlanBtn" class="sheet-button" style="margin-top: 10px;">הצג צל עתידי</button>
-            <button id="resetToNowBtn" class="sheet-button danger-btn" style="margin-top: 10px; display:none;">אפס לזמן נוכחי</button>
-            <p id="planningStatus" style="font-size: 0.9em; color: var(--text-primary); margin-top: 8px;"></p>
-        </div>
 
-        <div id="favoritesSectionSheet" class="control-section hidden">
-            <h3>מועדפים</h3>
-            <input type="text" id="favOriginNameSheet" placeholder="שם נקודת מוצא (אופציונלי)">
-            <input type="text" id="favDestNameSheet" placeholder="שם יעד (אופציונלי)">
-            <button id="saveFavBtnSheet" class="sheet-button">שמור מועדף</button>
-            <select id="favListSheet"></select>
-            <button id="calcFavBtnSheet" class="sheet-button" disabled>השתמש במועדף</button>
-            <button id="deleteFavBtnSheet" class="sheet-button danger-btn" disabled>מחק מועדף</button>
-        </div>
-
-        <div class="control-section hidden" id="routeInfoSectionSheet">
-             <h3>פרטי המסלול</h3>
-             <p>מרחק: <span id="routeDistance">...</span></p>
-             <p>זמן מוערך: <span id="routeTime">...</span></p>
-             <p>Nodes: <span id="routeNodes">...</span></p>
-        </div>
-    </div>
-</div>
+            <div id="favoritesTabContent" class="tab-content hidden">
+                <div id="favoritesSectionSheet" class="control-section"> <h3>My Favorite Routes</h3>
+                    <input type="text" id="favOriginNameSheet" placeholder="Origin Name (Optional)" class="sheet-input">
+                    <input type="text" id="favDestNameSheet" placeholder="Destination Name (Optional)" class="sheet-input" style="margin-top: 8px;">
+                    <button id="saveFavBtnSheet" class="sheet-button" style="margin-top: 10px;">Save Current Route as Favorite</button>
+                    <select id="favListSheet" class="sheet-input" style="margin-top: 8px; width: 100%;"></select>
+                    <div style="margin-top: 8px;">
+                        <button id="calcFavBtnSheet" class="sheet-button" disabled>Show This Favorite</button>
+                        <button id="deleteFavBtnSheet" class="sheet-button danger-btn" disabled>Delete This Favorite</button>
+                    </div>
+                    <p class="status-message" style="font-size: 0.9em; margin-top: 8px;"></p>
+                </div>
+            </div>
+        </div> </div> </div>
 
 <div class="loading-spinner">
      <div class="spinner"></div>
@@ -125,7 +156,8 @@
 <div class="error-message">
      </div>
 
-<script src="js/map.js"></script>
-<script src="js/app.js"></script> <script src="js/bottomSheet.js"></script>
+<script src="js/map.js" defer></script>
+<script src="js/bottomSheet.js" defer></script>
+<script src="js/app.js" defer></script>
 </body>
 </html>

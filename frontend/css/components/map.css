@@ -1,0 +1,61 @@
+.map-status {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 14px;
+    color: var(--text-secondary);
+    z-index: 400; /* ודאי שזה נמוך מהמודאל ומה-bottomSheet */
+    transition: all 0.2s ease;
+}
+.map-status.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.update-timer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-size: 14px;
+    color: var(--text-secondary);
+    z-index: 1000; /* צריך להיות נמוך מהמודאל אם רוצים שהמודאל יכסה אותו */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.update-timer .spinner { /* ספינר קטן בטיימר */
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite; /* @keyframes spin צריך להיות מוגדר */
+}
+.update-timer.updating {
+    background: var(--primary-color);
+    color: white;
+}
+.update-timer.updating .spinner {
+    border-color: rgba(255,255,255,0.3);
+    border-top-color: white;
+}
+
+.point-status { /* סטטוס נקודות על המפה */
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    text-align: center;
+}
+.point-status.active {
+    color: var(--primary-color);
+    font-weight: 500;
+}

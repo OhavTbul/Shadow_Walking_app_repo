@@ -12,6 +12,7 @@ from pyproj import Transformer
 from datetime import datetime as dt
 import pytz
 import traceback
+from flask_compress import Compress
 
 # ודא ששמות הקבצים המיובאים תואמים לשמות הקבצים שלך בפועל
 from SunLocation import SunLocation, TIME_ZONE  # מניח ש-TIME_ZONE מוגדר ב-SunLocation.py
@@ -36,6 +37,7 @@ app = Flask(
     static_folder=FRONTEND_DIR,
     static_url_path=''
 )
+Compress(app)
 app.secret_key = os.environ.get('SECRET_KEY', 'a-very-secret-key-that-you-should-change')
 app.logger.setLevel('INFO')
 CORS(app, origins=CORS_ORIGINS, supports_credentials=True)

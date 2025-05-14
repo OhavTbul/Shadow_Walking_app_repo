@@ -1,0 +1,11 @@
+
+/* טאבים במודאל האימות /
+.auth-tabs {
+display: flex;
+justify-content: center;
+margin-bottom: 20px;
+gap: 10px;
+}
+/ .tab-button כבר מוגדר ב-buttons.css */
+
+/* אם יש לך סגנונות ניווט אחרים, למשל בתוך ה-bottomSheet */

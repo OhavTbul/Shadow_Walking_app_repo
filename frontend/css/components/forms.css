@@ -1,0 +1,137 @@
+/* סגנונות למודאל האימות */
+.auth-modal {
+  display: none;
+  position: fixed;
+  z-index: 1001;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.6);
+  padding-top: 60px;
+}
+
+.auth-modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888; /* אפשר לשקול var(--border-color) או להסיר אם אין צורך */
+  width: 80%;
+  max-width: 450px;
+  border-radius: 12px;
+  position: relative;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+/* כרטיס האימות בתוך המודאל */
+.auth-modal-content .auth-card {
+  background: white;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+  text-align: center;
+}
+
+.auth-card h2 { /* כותרות בתוך המודאל */
+  margin-bottom: 20px;
+  font-size: 22px;
+  color: var(--orange-main-color); /* <--- שימוש בכתום הראשי */
+}
+
+.auth-card form {
+  margin-bottom: 20px;
+}
+
+.auth-card input {
+  width: 90%;
+  padding: 10px;
+  margin: 8px auto;
+  border: 1px solid var(--border-color); /* גבול אפור התחלתי */
+  border-radius: 8px;
+  font-size: 14px;
+  display: block;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background-color: #fff; /* רקע לבן רגיל */
+  color: var(--text-primary); /* צבע טקסט רגיל */
+  caret-color: var(--orange-main-color); /* צבע הסמן יהיה כתום */
+}
+
+.auth-card input:focus {
+  outline: none;
+  border-color: var(--orange-border-color); /* גבול כתום בפוקוס */
+  box-shadow: 0 0 0 3px var(--orange-focus-ring-color); /* טבעת focus כתומה */
+}
+
+/* טיפול ב-autofill של WebKit (כמו Chrome, Safari, Edge החדש) */
+.auth-card input:-webkit-autofill,
+.auth-card input:-webkit-autofill:hover,
+.auth-card input:-webkit-autofill:focus,
+.auth-card input:-webkit-autofill:active {
+  border: 1px solid var(--orange-border-color) !important; /* גבול כתום גם ב-autofill */
+  -webkit-text-fill-color: var(--text-primary) !important; /* צבע הטקסט הרגיל */
+  -webkit-box-shadow: 0 0 0 30px white inset !important; /* מכסה את הרקע הכחלחל בלבן */
+  /* אם רוצים רקע מעט כתום ב-autofill (פחות מומלץ כי עלול להפריע לקריאות): */
+  /* -webkit-box-shadow: 0 0 0 30px #FFF7ED inset !important; /* גוון כתום בהיר מאוד */
+  caret-color: var(--orange-main-color) !important; /* צבע סמן כתום */
+  transition: background-color 5000s ease-in-out 0s; /* טריק למנוע שינוי רקע מהיר חזרה */
+}
+
+
+#message { /* הודעות בתוך המודאל */
+  margin-top: 10px;
+  /* צבע ההודעה ישתנה על ידי JavaScript */
+  /* color: var(--primary-color);  נמחק מכאן כי JS קובע */
+  font-weight: 500;
+}
+
+/* סגנונות ל-Slider (נשארו עם הצבעים הראשיים הכחולים, אפשר לשנות גם אותם לכתום אם רוצים) */
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+input[type=range] {
+    width: 150px;
+    height: 6px;
+    -webkit-appearance: none;
+    background: var(--border-color);
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-color); /* <--- אפשר לשנות ל-var(--orange-main-color) */
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+#shadeValueDisplaySheet {
+    min-width: 40px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--primary-color); /* <--- אפשר לשנות ל-var(--orange-text-color) או var(--orange-main-color) */
+}
+
+@media (max-width: 600px) {
+    .slider-container {
+        width: 100%;
+    }
+    input[type=range] {
+        flex: 1;
+    }
+}
