@@ -1,22 +1,23 @@
 /* css/components/buttons.css */
 
-/* סגנון בסיסי לכל הכפתורים (אם רוצים הגדרה כללית) */
+/* סגנון בסיסי לכפתורים */
 button {
-    padding: 10px 15px; /* התאמה קלה מהמקור שהיה 10px 20px, יותר מתאים לכפתורים קטנים יותר */
+    padding: 8px 16px;
     font-size: 14px;
     font-weight: 500;
     border: none;
-    border-radius: 8px; /* 0.5rem */
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: var(--orange-main-color); /* ברירת מחדל - יידרס על ידי .button-gradient */
+    background: var(--orange-main-color);
     color: white;
-    display: inline-flex; /* שינוי ל-inline-flex כדי שהכפתור יתפוס רק את הרוחב הנחוץ */
+    display: inline-flex;
     align-items: center;
-    justify-content: center; /* מרכוז התוכן אם הכפתור רחב יותר מהטקסט */
+    justify-content: center;
     gap: 8px;
-    text-align: center; /* למקרה שה-display לא flex */
-    line-height: 1.2; /* לוודא שהטקסט לא צפוף מדי */
+    text-align: center;
+    line-height: 1.4;
+    box-shadow: 0 2px 4px rgba(253, 126, 20, 0.2);
 }
 
 button:hover:not(:disabled) { /* :not(:disabled) כדי לא להחיל hover על כפתורים מנוטרלים */
@@ -95,12 +96,13 @@ button:disabled {
 
 /* === קלאס גרדיאנט כתום ראשי === */
 .button-gradient-orange {
-  background-image: linear-gradient(to bottom right, var(--orange-main-color, #F97316), var(--orange-secondary-color, #FBBF24));
+    background: linear-gradient(135deg, var(--orange-main-color), var(--orange-secondary-color));
+    box-shadow: 0 2px 8px rgba(253, 126, 20, 0.25);
 }
 .button-gradient-orange:hover:not(:disabled) {
-  background-image: linear-gradient(to bottom left, var(--orange-main-color, #F97316), var(--orange-secondary-color, #FBBF24));
-  /* אפשר להכהות מעט את הגוונים ב-hover אם רוצים */
-  /* background-image: linear-gradient(to bottom left, var(--orange-hover-color, #EA580C), var(--orange-main-color, #F97316)); */
+    background: linear-gradient(135deg, var(--orange-hover-color), var(--orange-main-color));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
 }
 .button-gradient-orange:focus, .button-gradient-orange:focus-visible {
   box-shadow: 0 0 0 4px var(--orange-focus-ring-color, rgba(251, 191, 36, 0.4));
@@ -113,7 +115,7 @@ button:disabled {
 .sheet-button {
     padding: 8px 15px; /* ברירת מחדל לכפתורים בתוך ה-sheet, יידרס על ידי .button-gradient אם שניהם בשימוש */
     margin: 5px; /* מרווח כללי, אפשר להשתמש ב-gap על ה-parent אם הוא flex */
-    /* אם רוצים שירשו את סגנון הגרדיאント, ומוסיפים את .button-gradient,
+    /* אם רוצים שירשו את סגנון הגרדיאנט, ומוסיפים את .button-gradient,
        אז אין צורך להגדיר כאן background-color כללי.
        ההגדרה הכללית של 'button' תיתן להם צבע ברירת מחדל אם הם רק .sheet-button. */
 }
@@ -149,17 +151,12 @@ button:disabled {
 
 /* כפתורי טאבים (Tabs) */
 .tab-button {
-  padding: 8px 16px; /* התאמת padding */
-  background: transparent; /* רקע שקוף לטאבים לא פעילים */
-  border: 1px solid var(--orange-border-color); /* גבול עדין */
-  color: var(--orange-secondary-color);
-  border-radius: 6px; /* רדיוס קטן יותר */
-  font-weight: 500;
-  /* display: inline-flex; כבר בירושה מ-button */
-  /* align-items: center; כבר בירושה מ-button */
-  /* justify-content: center; כבר בירושה מ-button */
-  /* gap: 8px; כבר בירושה מ-button */
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    background: transparent;
+    border: 1px solid var(--orange-border-color);
+    color: var(--orange-text-color);
+    box-shadow: none;
+    border-radius: 8px;
+    padding: 6px 14px;
 }
 
 .tab-button.active {
@@ -216,4 +213,23 @@ button:disabled {
 .small-icon-button:hover:not(:disabled) {
     background-color: var(--orange-border-color);
     color: var(--orange-text-color);
+}
+
+/* כפתורי ניווט להשוואת מסלולים */
+#prevCompRouteBtn,
+#nextCompRouteBtn {
+    min-width: 80px;
+    padding: 8px 16px;
+    margin: 0 5px;
+    background-color: var(--orange-main-color);
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+#prevCompRouteBtn:disabled,
+#nextCompRouteBtn:disabled {
+    background-color: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
 }

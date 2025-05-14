@@ -1,24 +1,27 @@
 :root {
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
-    --danger-color: #ef4444;
-    --danger-hover: #dc2626;
-    --background: #f8fafc;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
-
-
-    /* === משתני צבע כתומים === */
-    --orange-accent-color: #F97316;
-    --orange-main-color: #F97316;       /* כתום ראשי (למשל, orange-600 של Tailwind) */
-    --orange-hover-color: #EA580C;      /* כתום ל-hover (למשל, orange-700 של Tailwind) */
-    --orange-secondary-color: #FBBF24;  /* כתום משני/בהיר יותר (למשל, amber-400 של Tailwind) */
-    --orange-focus-ring-color: rgba(251, 191, 36, 0.4); /* טבעת focus בגוון amber-300 */
-    --orange-border-color: #FB923C;     /* גבול כתום (למשל, orange-400 של Tailwind) */
-    --orange-text-color: #C2410C;       /* צבע טקסט כתום כהה (למשל, orange-800) אם צריך */
-
-    --sheet-expanded-height-default: 60%; /* גובה התחלתי / לטאבים קצרים-בינוניים */
+    /* צבעים ראשיים מעודכנים */
+    --primary-color: #fd7e14;
+    --primary-hover: #f76707;
+    
+    /* גווני כתום חדשים ועדינים יותר */
+    --orange-accent-color: #ff922b;
+    --orange-main-color: #fd7e14;
+    --orange-hover-color: #f76707;
+    --orange-secondary-color: #ffa94d;
+    --orange-focus-ring-color: rgba(255, 169, 77, 0.4);
+    --orange-border-color: #ffd8a8;
+    --orange-text-color: #d9480f;
+    
+    /* צבעי רקע ותוכן מעודכנים */
+    --background: #fff9f6;
+    --text-primary: #2d2d2d;
+    --text-secondary: #666666;
+    --border-color: #ffe8d6;
+    --danger-color: #e03131;
+    --danger-hover: #c92a2a;
+    
+    /* גבהים */
+    --sheet-expanded-height-default: 65%;
     --sheet-expanded-height-tall: 85%;
 }
 

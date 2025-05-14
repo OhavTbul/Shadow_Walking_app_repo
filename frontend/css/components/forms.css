@@ -13,18 +13,17 @@
 }
 
 .auth-modal-content {
-  background-color: #fefefe;
+  background-color: rgba(255, 255, 255, 0.98);
   margin: 5% auto;
-  padding: 20px;
-  border: 1px solid #888; /* אפשר לשקול var(--border-color) או להסיר אם אין צורך */
+  padding: 25px;
+  border: none;
   width: 80%;
   max-width: 450px;
-  border-radius: 12px;
+  border-radius: 16px;
   position: relative;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* כרטיס האימות בתוך המודאל */
 .auth-modal-content .auth-card {
   background: white;
   padding: 0;
@@ -45,23 +44,23 @@
 }
 
 .auth-card input {
-  width: 90%;
-  padding: 10px;
-  margin: 8px auto;
-  border: 1px solid var(--border-color); /* גבול אפור התחלתי */
-  border-radius: 8px;
-  font-size: 14px;
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: 1px solid var(--orange-border-color);
+  border-radius: 10px;
+  font-size: 15px;
   display: block;
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  background-color: #fff; /* רקע לבן רגיל */
+  background-color: rgba(255, 255, 255, 0.9);
   color: var(--text-primary); /* צבע טקסט רגיל */
   caret-color: var(--orange-main-color); /* צבע הסמן יהיה כתום */
 }
 
 .auth-card input:focus {
   outline: none;
-  border-color: var(--orange-border-color); /* גבול כתום בפוקוס */
-  box-shadow: 0 0 0 3px var(--orange-focus-ring-color); /* טבעת focus כתומה */
+  border-color: var(--orange-main-color);
+  box-shadow: 0 0 0 3px var(--orange-focus-ring-color);
 }
 
 /* טיפול ב-autofill של WebKit (כמו Chrome, Safari, Edge החדש) */
@@ -99,21 +98,23 @@
 
 input[type=range] {
     width: 150px;
-    height: 6px;
+    height: 4px;
     -webkit-appearance: none;
-    background: var(--border-color);
+    background: var(--orange-border-color);
     border-radius: 3px;
     outline: none;
 }
 
 input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    background: var(--primary-color); /* <--- אפשר לשנות ל-var(--orange-main-color) */
+    width: 16px;
+    height: 16px;
+    background: var(--orange-main-color);
+    border: 2px solid white;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 input[type=range]::-webkit-slider-thumb:hover {

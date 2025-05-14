@@ -21,16 +21,17 @@
 <body>
 
 <div class="title">
-  <div class="title-content">
-    <img src="assets/bgu-logo.png" class="bgu-logo" alt="Ben-Gurion University">
-    <h1>Shadow Route Planner</h1>
-  </div>
-  <div class="description">Find the optimal walking route based on sun exposure and shadow coverage</div>
-  <div id="shadowUpdateTimeDisplay" style="text-align: center; font-size: 0.8em; color: var(--text-secondary); margin-top: 5px;">
+    <div class="title-content">
+        <div class="title-header">
+            <img src="assets/bgu-logo.png" class="bgu-logo" alt="Ben-Gurion University">
+            <h1>Shadow Route Planner</h1>
+        </div>
+        <div class="description">Find the optimal walking route based on sun exposure and shadow coverage</div>
+        <div id="shadowUpdateTimeDisplay"></div>
     </div>
-  <button type="button" id="openAuthModalBtn" class="button-gradient button-gradient-orange" style="margin-left: auto; margin-right: 20px;">
-    Login / Signup
-  </button>
+    <button type="button" id="openAuthModalBtn" class="button-gradient button-gradient-orange">
+        Login / Signup
+    </button>
 </div>
 
 <div class="auth-modal" id="authModalContainer" style="display: none;">

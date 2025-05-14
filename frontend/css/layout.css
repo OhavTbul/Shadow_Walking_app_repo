@@ -1,50 +1,93 @@
 /* כללי למפה */
 #map {
-    height: 100%;
-    border-radius: 12px;
-    margin: 0 20px; /* אולי שייך ל- map.css? תלוי אם זה חלק מהפריסה הכללית או ספציפי למפה */
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    height: calc(100vh - 85px); /* מגדיל את גובה המפה */
+    margin: 0;
+    width: 100%;
 }
 
 /* כותרת ראשית */
 .title {
-    text-align: center;
-    padding: 20px;
-    background: white;
-    margin-bottom: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    position: relative; /* חשוב אם יש אלמנטים absolute בתוכו */
-    z-index: 500; /* אם הכותרת צריכה להיות מעל דברים מסוימים */
+    height: auto;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.98);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1000;
+}
+
+.title-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.title-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#openAuthModalBtn {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1001;
+    padding: 8px 16px;
+    white-space: nowrap;
+}
+
+#shadowUpdateTimeDisplay {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.bgu-logo {
+    height: 30px;  /* הקטנת הלוגו */
+    max-height: 30px;
+    width: auto;
+    object-fit: contain;
 }
 
 .title h1 {
+    font-size: 20px;
     margin: 0;
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--orange-text-color);
 }
 
 .description {
-    text-align: center;
-    color: var(--orange-secondary-color);
-    font-size: 15px;
-    margin-top: 8px;
-    line-height: 1.5;
-}
-
-.bgu-logo { /* סגנון ללוגו שהיה בכותרת */
-  height: 40px;
-  max-height: 40px;
-  width: auto;
-  object-fit: contain;
-  align-self: center; /* אם title-content הוא flex */
+    font-size: 13px;
+    margin-top: 2px;
 }
 
 @media (max-width: 600px) {
-  .bgu-logo {
-    height: 30px;
-  }
+    .bgu-logo {
+        height: 25px;  /* עוד יותר קטן במובייל */
+    }
+    
+    .title h1 {
+        font-size: 18px;
+    }
+    
+    .description {
+        display: none; /* מסתיר את התיאור במובייל לחסוך מקום */
+    }
+
+    .title {
+        padding: 8px 15px;
+    }
+
+    .description {
+        font-size: 12px;
+    }
+
+    #openAuthModalBtn {
+        right: 15px;
+        padding: 6px 12px;
+        font-size: 13px;
+    }
 }
 
 /* סגנונות בסיסיים ל-BottomSheet - החלק של המבנה הכללי */
@@ -59,14 +102,16 @@
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
     transition: transform 0.35s ease-in-out;
     --sheet-collapsed-height: 90px;
-     --sheet-expanded-height: var(--sheet-expanded-height-default);
-    height: var(--sheet-expanded-height);
+    height: 50vh;  /* קביעת גובה מקסימלי ל-50% מגובה המסך */
+    max-height: 50vh;
     transform: translateY(calc(100% - var(--sheet-collapsed-height)));
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
 }
 
 #bottomSheet.expanded {
-    transform: translateY(calc(100% - var(--sheet-expanded-height)));
+    transform: translateY(0);
 }
 
 #bottomSheet.hidden { /* אם את משתמשת בזה */
@@ -79,19 +124,31 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-shrink: 0;  /* מונע מהידית להתכווץ */
 }
 
 .handle-bar {
-    width: 45px;
-    height: 5px;
-    background-color: #d1d5db;
-    border-radius: 3px;
+    width: 50px;
+    height: 4px;
+    background-color: var(--orange-border-color);
 }
 
 .sheet-content { /* כללי לתוכן ב-bottom sheet */
-    overflow-y: auto;
-    max-height: calc(100% - 40px); /* התאימי לפי גובה הידית */
+    flex-grow: 1;
+    overflow-y: auto;  /* מאפשר גלילה בתוכן */
     padding: 0 20px 20px 20px;
+}
+
+.tab-content-area {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+/* וודא שהתוכן של כל טאב יכול לגלול */
+.tab-content {
+    height: 100%;
+    overflow-y: auto;
 }
 
 .expanded-content { display: none; } /* לוגיקת הצגת תוכן מכווץ/מורחב */
