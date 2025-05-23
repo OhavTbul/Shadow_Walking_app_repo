@@ -149,33 +149,108 @@ button:disabled {
 }
 
 
-/* כפתורי טאבים (Tabs) */
+/* כפתורי טאבים (Tabs) - סגנון בסיסי */
+.bottom-sheet-tabs-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px 20px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    gap: 12px;
+}
+
 .tab-button {
     background: transparent;
-    border: 1px solid var(--orange-border-color);
-    color: var(--orange-text-color);
+    border: 1px solid #e5e7eb;
+    color: #666;
     box-shadow: none;
     border-radius: 8px;
-    padding: 6px 14px;
+    padding: 12px;
+    min-width: 100px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.tab-button i {
+    font-size: 18px;
+}
+
+.tab-button .tab-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tab-button:hover:not(.active) {
+    background: #f8f9fa;
+    border-color: #ddd;
 }
 
 .tab-button.active {
-  background: var(--orange-main-color);
-  color: white;
-  border-color: var(--orange-main-color);
-  font-weight: 600; /* הדגשת הטאב הפעיל */
+    background: var(--orange-main-color);
+    color: white;
+    border-color: var(--orange-main-color);
 }
 
-.tab-button:hover:not(.active):not(:disabled) {
-  background: var(--orange-hover-color);
-  color: white;
-  border-color: var(--orange-hover-color);
-}
-.tab-button:focus, .tab-button:focus-visible {
-    outline: 2px solid var(--orange-main-color);
-    outline-offset: 2px;
+.tab-button.active .tab-text {
+    color: white;
 }
 
+/* מצב מובייל */
+@media (max-width: 600px) {
+    .bottom-sheet-tabs-container {
+        padding: 12px;
+        gap: 20px;
+        background: transparent;
+    }
+
+    .tab-button {
+        padding: 8px 4px;
+        min-width: 70px;
+        border: none;
+        background: transparent !important; /* חשוב להוסיף !important */
+    }
+    
+    .tab-button i {
+        font-size: 24px;
+        margin-bottom: 6px;
+        color: #999; /* צבע אפור בהיר יותר לאייקון לא פעיל */
+        transition: color 0.2s ease;
+    }
+    
+    .tab-button .tab-text {
+        font-size: 12px;
+        display: block;
+        text-align: center;
+        color: #999; /* צבע אפור בהיר יותר לטקסט לא פעיל */
+        transition: color 0.2s ease;
+    }
+
+    .tab-button.active {
+        background: transparent !important; /* חשוב להוסיף !important */
+        border: none;
+        box-shadow: none;
+    }
+
+    .tab-button.active i,
+    .tab-button.active .tab-text {
+        color: var(--orange-main-color); /* צבע כתום לאייקון ולטקסט במצב פעיל */
+    }
+
+    /* ביטול כל הסגנונות הקודמים במצב מובייל */
+    .tab-button:hover:not(.active),
+    .tab-button.active,
+    .tab-button:hover {
+        background: transparent !important;
+        border: none;
+        box-shadow: none;
+    }
+}
 
 /* כפתור סגירת מודאל (ללא שינוי מהקוד שלך, נראה טוב) */
 .auth-modal-close-btn {
@@ -232,4 +307,32 @@ button:disabled {
     background-color: var(--border-color);
     color: var(--text-secondary);
     cursor: not-allowed;
+}
+
+/* כותרות בתוך ה-Bottom Sheet */
+.bottom-sheet h2,
+.bottom-sheet h3,
+.bottom-sheet h4 {
+    text-align: center;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 1rem 0;
+}
+
+.route-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    text-align: left;
+}
+
+.route-details {
+    text-align: left;
+    margin: 1rem 0;
+}
+
+.control-section {
+    text-align: left;
+    margin: 1rem 0;
 }

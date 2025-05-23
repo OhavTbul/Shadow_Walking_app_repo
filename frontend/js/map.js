@@ -330,35 +330,31 @@ async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צלל
 }
 
 
-    createCustomMarker(color, label) {
-        const container = document.createElement('div');
-        container.className = 'custom-marker-container';
-        const inner = document.createElement('div');
-        inner.className = 'custom-marker';
-        inner.style.backgroundColor = color;
-        inner.style.width = '30px'; inner.style.height = '30px';
-        inner.style.borderRadius = '50%'; inner.style.border = '2px solid white';
-        inner.style.display = 'flex'; inner.style.alignItems = 'center';
-        inner.style.justifyContent = 'center'; inner.style.color = 'white';
-        inner.style.fontWeight = 'bold'; inner.style.fontSize = '14px';
-        inner.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
-        inner.innerText = label;
-        container.appendChild(inner);
-        return container;
-    }
-
     setStartPoint(lngLat) {
         if (this.startMarker) this.startMarker.remove();
         this.startPointCoords = lngLat;
-        const el = this.createCustomMarker('var(--primary-color)', 'S');
+        const el = this.createCustomMarker('var(--primary-color)', null);
         this.startMarker = new maplibregl.Marker({ element: el }).setLngLat([lngLat.lng, lngLat.lat]).addTo(this.map);
     }
 
     setEndPoint(lngLat) {
         if (this.endMarker) this.endMarker.remove();
         this.endPointCoords = lngLat;
-        const el = this.createCustomMarker('var(--danger-color)', 'E');
+        const el = this.createCustomMarker('var(--danger-color)', null);
         this.endMarker = new maplibregl.Marker({ element: el }).setLngLat([lngLat.lng, lngLat.lat]).addTo(this.map);
+    }
+
+    createCustomMarker(color, label) {
+        const container = document.createElement('div');
+        container.className = 'custom-marker-container';
+        const inner = document.createElement('div');
+        inner.className = 'custom-marker';
+        inner.style.color = color;
+        inner.style.fontSize = '32px'; // גודל האייקון
+        inner.style.filter = 'drop-shadow(0 2px 2px rgba(0,0,0,0.3))'; // צל עדין
+        inner.innerHTML = '<i class="fas fa-location-dot"></i>';
+        container.appendChild(inner);
+        return container;
     }
 
     updateSetPointsButtonState(isActive, customText = null) {
@@ -385,19 +381,41 @@ async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צלל
         this.showLoading('Calculating route...');
         try {
             const response = await fetch('/route', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    start: [start.lat, start.lng], dest: [end.lat, end.lng],
+                    start: [start.lat, start.lng], 
+                    dest: [end.lat, end.lng],
                     shade_weight: this.shadeWeight
                 })
             });
             const data = await response.json();
             if (response.ok && data.route && data.route.length > 0) {
                 const routeGeoJSON = {
-                    type: 'Feature', properties: {},
-                    geometry: { type: 'LineString', coordinates: data.route.map(coord => [coord[1], coord[0]]) }
+                    type: 'Feature', 
+                    properties: {},
+                    geometry: { 
+                        type: 'LineString', 
+                        coordinates: data.route.map(coord => [coord[1], coord[0]]) 
+                    }
                 };
-                this.displayRoute(routeGeoJSON); this.updateRouteInfo(data);
+                
+                // עדכון מיקומי הסמנים לצמתים הראשון והאחרון במסלול
+                const startNode = [data.route[0][1], data.route[0][0]];  // [lng, lat]
+                const endNode = [data.route[data.route.length - 1][1], data.route[data.route.length - 1][0]];
+                
+                // עדכון הסמנים למיקומים החדשים
+                if (this.startMarker) {
+                    this.startMarker.setLngLat(startNode);
+                    this.startPointCoords = { lng: startNode[0], lat: startNode[1] };
+                }
+                if (this.endMarker) {
+                    this.endMarker.setLngLat(endNode);
+                    this.endPointCoords = { lng: endNode[0], lat: endNode[1] };
+                }
+
+                this.displayRoute(routeGeoJSON);
+                this.updateRouteInfo(data);
                 this.clearComparisonDisplay();
             } else {
                 throw new Error(data.error || 'Failed to calculate route or route is empty');

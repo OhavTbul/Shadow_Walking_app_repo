@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#2563eb">
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components/buttons.css">
@@ -78,16 +79,28 @@
 
     <div class="sheet-content expanded-content">
         <div class="bottom-sheet-tabs-container" role="group">
-            <button type="button" id="tabRoute" class="tab-button active">Calculate Route</button>
-            <button type="button" id="tabCompare" class="tab-button hidden">Compare Routes</button>
-            <button type="button" id="tabFuture" class="tab-button hidden">Future Planning</button>
-            <button type="button" id="tabFavorites" class="tab-button hidden">Favorite Routes</button>
+            <button type="button" id="tabRoute" class="tab-button active">
+                <i class="fas fa-route"></i>
+                <span class="tab-text">Route</span>
+            </button>
+            <button type="button" id="tabCompare" class="tab-button hidden">
+                <i class="fas fa-code-compare"></i>
+                <span class="tab-text">Compare</span>
+            </button>
+            <button type="button" id="tabFuture" class="tab-button hidden">
+                <i class="far fa-clock"></i>
+                <span class="tab-text">Future</span>
+            </button>
+            <button type="button" id="tabFavorites" class="tab-button hidden">
+                <i class="fas fa-star"></i>
+                <span class="tab-text">Favorites</span>
+            </button>
         </div>
 
         <div class="tab-content-area">
             <div id="routeTabContent" class="tab-content active">
                 <div class="control-section">
-                    <h3>Current Route Planning</h3>
+                    <h3>Current Route</h3>
                     <button id="setPointsBtnExpanded" class="sheet-button">Set/Clear Points</button>
                     <div class="slider-group" style="margin-top: 15px;">
                         <label for="shadeSliderSheet">Shade Preference:</label>
@@ -121,7 +134,7 @@
 
             <div id="futureTabContent" class="tab-content hidden">
                  <div id="futurePlanningSection" class="control-section">
-                    <h3>Shadow Planning for a Future Time</h3>
+                    <h3>Future Route Plan</h3>
                     <div>
                         <label for="futureDate">Date:</label>
                         <input type="date" id="futureDate" class="sheet-input">
@@ -137,8 +150,8 @@
 
             <div id="favoritesTabContent" class="tab-content hidden">
                 <div id="favoritesSectionSheet" class="control-section"> <h3>My Favorite Routes</h3>
-                    <input type="text" id="favOriginNameSheet" placeholder="Origin Name (Optional)" class="sheet-input">
-                    <input type="text" id="favDestNameSheet" placeholder="Destination Name (Optional)" class="sheet-input" style="margin-top: 8px;">
+                    <input type="text" id="favOriginNameSheet" placeholder="Origin Name" class="sheet-input">
+                    <input type="text" id="favDestNameSheet" placeholder="Destination Name" class="sheet-input" style="margin-top: 8px;">
                     <button id="saveFavBtnSheet" class="sheet-button" style="margin-top: 10px;">Save Current Route as Favorite</button>
                     <select id="favListSheet" class="sheet-input" style="margin-top: 8px; width: 100%;"></select>
                     <div style="margin-top: 8px;">
