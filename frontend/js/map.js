@@ -9,7 +9,7 @@ class MapManager {
         this.shadowRefreshInterval = null;
         this.shadowRefreshRate = 15 * 60 * 1000;
         this.lastShadowUpdateTime = null;
-        this.currentPoint = 'start';
+        this.currentPoint = null; // שינוי מ-'start' ל-null
         this.shadeWeight = 1.0;
         this.lastShadowsData = null; // ישמש לשמירת הצללים האחרונים שנטענו (בין אם עתידיים או נוכחיים)
         this.lastRouteData = null;
@@ -40,16 +40,17 @@ class MapManager {
             antialias: true
         });
 
-        // הוספת טיפול באייקונים חסרים
+        // עדכון הטיפול באייקונים חסרים
         this.map.on('styleimagemissing', (e) => {
-            // יצירת אייקון ריק במקום האייקון החסר
-            const emptyImage = new Image();
-            emptyImage.width = 1;
-            emptyImage.height = 1;
-            const context = document.createElement('canvas').getContext('2d');
-            context.canvas.width = 1;
-            context.canvas.height = 1;
-            this.map.addImage(e.id, context.canvas);
+            const width = 1;
+            const height = 1;
+            const emptyData = new Uint8Array(width * height * 4); // RGBA format
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            
+            this.map.addImage(e.id, { width, height, data: emptyData });
         });
 
         this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
@@ -125,7 +126,12 @@ add3DBuildings() {
 
 
     handleMapClick(e) {
-        if (!this.isSettingPoints) return;
+        if (!this.isSettingPoints) {
+            // אם המשתמש לוחץ על המפה לפני הפעלת מצב הגדרת נקודות
+            this.showError("Please click 'Start' to begin setting route points");
+            return;
+        }
+        
         const lngLat = e.lngLat;
         
         if (this.currentPoint === 'start') {
@@ -138,7 +144,6 @@ add3DBuildings() {
             this.currentPoint = 'complete';
             this.updateRouteButtonsState('complete');
             document.querySelector('.route-instruction').textContent = 'Press "Set Route" to calculate the route';
-            // הסרנו את הקריאה האוטומטית ל-calculateRoute
         }
     }
 
@@ -730,9 +735,22 @@ updateLastShadowTimeDisplay(timestamp) {
 
     async startRouteComparison() {
         if (!this.startMarker || !this.endMarker) {
-            this.showError('Please set start and end points first'); return;
+            this.showError('Please set start and end points first');
+            return;
         }
+
+        const compareInitialView = document.getElementById('compareInitialView');
+        const compareResultsView = document.getElementById('compareResultsView');
+        
+        if (compareInitialView && compareResultsView) {
+            compareInitialView.classList.remove('active');
+            compareResultsView.classList.add('active');
+        }
+
+        // מחיקת נתוני השוואה קודמים
         this.comparisonRoutes = [];
+        this.currentComparisonIndex = 0;
+
         const shadeWeights = [1, 3, 6, 9];
         this.showLoading('Calculating comparison routes...');
         try {
@@ -786,38 +804,64 @@ updateLastShadowTimeDisplay(timestamp) {
     }
 
     updateComparisonStats() {
-        if (!this.comparisonStatsElement) { console.warn('#comparisonStatsDisplay element not found'); return; }
-        if (this.comparisonRoutes.length === 0) { this.clearComparisonDisplay(); return; }
-        const currentRoute = this.comparisonRoutes[this.currentComparisonIndex];
-        if (!currentRoute) { this.clearComparisonDisplay(); return; }
+        if (!this.comparisonStatsElement) return;
+        
+        if (this.comparisonRoutes.length === 0) {
+            this.clearComparisonDisplay();
+            return;
+        }
 
-        // הסרנו הדפסות מיותרות מכאן
+        const currentRoute = this.comparisonRoutes[this.currentComparisonIndex];
+        if (!currentRoute) {
+            this.clearComparisonDisplay();
+            return;
+        }
+
         const distanceForDisplay = Math.round(currentRoute.distance);
         const minutesForDisplay = Math.round(currentRoute.distance / 84);
 
         this.comparisonStatsElement.innerHTML = `
-            <h4>Route Comparison (${this.currentComparisonIndex + 1}/${this.comparisonRoutes.length})</h4>
-            <div class="route-details">
-                <div class="route-stat"><span>Shade Preference:</span><span>${currentRoute.shadeWeight.toFixed(1)}</span></div>
-                <div class="route-stat"><span>Distance:</span><span>${distanceForDisplay}m</span></div>
-                <div class="route-stat"><span>Estimated Time:</span><span>~${minutesForDisplay} min</span></div>
-                <div class="route-stat"><span>Nodes:</span><span>${currentRoute.nodes || 'N/A'}</span></div>
-            </div>
-            <div class="route-navigation">
-                 <button id="prevCompRouteBtn" class="sheet-button" ${this.currentComparisonIndex === 0 ? 'disabled' : ''}>&lt; Prev</button>
-                <button id="nextCompRouteBtn" class="sheet-button" ${this.currentComparisonIndex >= this.comparisonRoutes.length - 1 ? 'disabled' : ''}>Next &gt;</button>
-            </div>
-        `;
-        this.comparisonStatsElement.classList.remove('hidden');
-        const parentSection = document.getElementById('comparisonSectionSheet');
-        if (parentSection) parentSection.classList.remove('hidden');
+        <div class="control-section">
+            <h3>Route Details</h3>
+            <p style="color: var(--orange-main-color)">Shade Preference: <span>${currentRoute.shadeWeight.toFixed(1)}</span></p>
+            <p>Distance: <span>${distanceForDisplay}m</span></p>
+            <p>Est. Time: <span>~${minutesForDisplay} min</span></p>
+        </div>
+        <div class="route-navigation">
+            <button class="nav-button" id="prevCompRouteBtn" ${this.currentComparisonIndex === 0 ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <button class="nav-button" id="nextCompRouteBtn" ${this.currentComparisonIndex >= this.comparisonRoutes.length - 1 ? 'disabled' : ''}>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+
+        // הוספת מאזינים לכפתור החדש
+        const newComparisonBtn = document.getElementById('newComparisonBtn');
+        if (newComparisonBtn) {
+            newComparisonBtn.onclick = () => {
+                document.getElementById('compareInitialView').classList.add('active');
+                document.getElementById('compareResultsView').classList.remove('active');
+                this.clearComparisonDisplay();
+            };
+        }
     }
 
     clearComparisonDisplay() {
-        this.comparisonRoutes = []; this.currentComparisonIndex = 0;
+        this.comparisonRoutes = [];
+        this.currentComparisonIndex = 0;
+        
+        const compareInitialView = document.getElementById('compareInitialView');
+        const compareResultsView = document.getElementById('compareResultsView');
+        
+        if (compareInitialView && compareResultsView) {
+            compareInitialView.classList.add('active');
+            compareResultsView.classList.remove('active');
+        }
+        
         if (this.comparisonStatsElement) {
             this.comparisonStatsElement.innerHTML = '';
-            this.comparisonStatsElement.classList.add('hidden');
         }
     }
 
@@ -839,8 +883,11 @@ updateLastShadowTimeDisplay(timestamp) {
         const setRouteBtn = document.getElementById('setRouteBtn');
         const instruction = document.querySelector('.route-instruction');
 
+        if (instruction) {
+            instruction.textContent = 'Click "Start" to begin setting route points';
+        }
+
         startBtn.addEventListener('click', () => {
-            // מחיקת כל המסלול והתחלה מחדש
             this.clearRoute();
             this.currentPoint = 'start';
             this.isSettingPoints = true;

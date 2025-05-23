@@ -446,32 +446,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const bottomSheetNode = document.getElementById('bottomSheet');
     const bottomSheetTabsContainer = bottomSheetNode ? bottomSheetNode.querySelector('.bottom-sheet-tabs-container') : null;
 
-    if (bottomSheetNode && bottomSheetTabsContainer) {
-        console.log("All tab buttons found by querySelectorAll (before delegation):", bottomSheetTabsContainer.querySelectorAll('.tab-button'));
-
+    if (bottomSheetTabsContainer) {
         bottomSheetTabsContainer.addEventListener('click', (event) => {
             const button = event.target.closest('.tab-button');
-
-            if (!button) {
+            
+            if (!button || button.classList.contains('hidden')) {
                 return;
             }
 
-            console.log("--- Tab Click Event (Delegated) ---");
-            console.log("Clicked button ID:", button.id);
-            console.log("Button current classList:", button.classList.toString());
-            console.log("Is button 'hidden'?", button.classList.contains('hidden'));
-            console.log("Is button 'active'?", button.classList.contains('active'));
-
-            if (button.classList.contains('active') && !button.classList.contains('hidden')) {
-                console.log("-> Tab is already active and visible. Returning.");
+            // בדיקת לחיצה על טאב פעיל - נחזיר רק אם זה לא טאב ההשוואה
+            if (button.classList.contains('active') && button.id !== 'tabCompare') {
                 return;
             }
-            if (button.classList.contains('hidden')) {
-                console.log("-> Tab is marked as hidden. Ignoring click. Returning.");
+
+            // אם זה טאב ההשוואה ונלחץ כשהוא פעיל, נחזור למסך ההתחלתי
+            if (button.id === 'tabCompare' && button.classList.contains('active')) {
+                const compareInitialView = document.getElementById('compareInitialView');
+                const compareResultsView = document.getElementById('compareResultsView');
+                if (compareInitialView && compareResultsView) {
+                    compareInitialView.classList.add('active');
+                    compareResultsView.classList.remove('active');
+                }
                 return;
             }
-            console.log("-> Tab is not hidden and not active. Proceeding to switch.");
 
+            // המשך הלוגיקה הקיימת של החלפת טאבים
             const allTabButtonsInContainer = bottomSheetTabsContainer.querySelectorAll('.tab-button');
             const tabContentsArea = bottomSheetNode.querySelector('.tab-content-area');
             const tabContents = tabContentsArea ? tabContentsArea.querySelectorAll(':scope > .tab-content') : [];

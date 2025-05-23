@@ -132,17 +132,41 @@
             </div>
 
             <div id="compareTabContent" class="tab-content hidden">
-                <div class="control-section">
-                    <h3>Compare Routes</h3>
-                    <p style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">Compare routes with different shade preferences to find your perfect balance.</p>
-                    <button id="compareRoutesBtnSheet" class="sheet-button" title="Compare routes with different shade preferences">Start Route Comparison</button>
-                    <div id="comparisonSectionSheet" class="hidden" style="margin-top:15px; padding-top:15px; border-top: 1px solid var(--border-color);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4>Comparison Results</h4>
-                            <button id="closeComparisonBtn" class="sheet-button small-icon-button" title="Close Comparison">&times;</button>
+                <div id="compareInitialView" class="compare-view active">
+                    <div class="control-section text-center">
+                        <h3>Compare Routes</h3>
+                        <p>Compare different route options with varying shade preferences to find your perfect balance.</p>
+                        <div class="compare-illustration">
+                            <i class="fas fa-route route-icon"></i>
+                            <i class="fas fa-arrows-left-right compare-icon"></i>
+                            <i class="fas fa-route route-icon"></i>
                         </div>
-                        <div id="comparisonStatsDisplay">
+                        <button id="compareRoutesBtnSheet" class="sheet-button button-gradient button-gradient-orange">
+                            <i class="fas fa-code-compare"></i>
+                            Start Route Comparison
+                        </button>
+                    </div>
+                </div>
+
+                <div id="compareResultsView" class="compare-view">
+                    <div class="control-section">
+                        <div class="results-header">
+                            <h3>Route Options</h3>
+                            <button id="newComparisonBtn" class="sheet-button small-button">
+                                <i class="fas fa-rotate"></i>
+                                New Comparison
+                            </button>
+                        </div>
+                        <div id="comparisonStatsDisplay" class="comparison-results">
+                            <div class="route-info-section">
+                                <p class="shade-preference">Shade Preference: <span>...</span></p>
+                                <p>Distance: <span>...</span></p>
+                                <p>Est. Time: <span>...</span></p>
                             </div>
+                            <div class="route-navigation">
+                                <!-- כפתורי ניווט יתווספו דינמית -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
