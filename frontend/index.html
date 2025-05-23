@@ -100,19 +100,34 @@
         <div class="tab-content-area">
             <div id="routeTabContent" class="tab-content active">
                 <div class="control-section">
-                    <h3>Current Route</h3>
-                    <button id="setPointsBtnExpanded" class="sheet-button">Set/Clear Points</button>
-                    <div class="slider-group" style="margin-top: 15px;">
+                    <h3>Route Settings</h3>
+                    <div class="slider-group">
                         <label for="shadeSliderSheet">Shade Preference:</label>
-                        <input type="range" min="0.1" max="10" step="0.1" value="1" id="shadeSliderSheet">
+                        <input type="range" min="1" max="10" step="0.1" value="1" id="shadeSliderSheet">
                         <span id="shadeValueDisplaySheet">1.0</span>
                     </div>
                 </div>
+                <div class="route-controls">
+                    <div class="route-buttons">
+                        <button id="startPointBtn" class="route-step-btn">
+                            <i class="fas fa-location-dot"></i>
+                            <span>Start</span>
+                        </button>
+                        <button id="destPointBtn" class="route-step-btn">
+                            <i class="fas fa-location-dot"></i>
+                            <span>Dest.</span>
+                        </button>
+                        <button id="setRouteBtn" class="route-step-btn">
+                            <i class="fas fa-check"></i>
+                            <span>Set Route</span>
+                        </button>
+                    </div>
+                    <div class="route-instruction">Touch the map to create a starting point</div>
+                </div>
                 <div class="control-section hidden" id="routeInfoSectionSheet">
-                     <h3>Route Details</h3>
-                     <p>Distance: <span id="routeDistance">...</span></p>
-                     <p>Est. Time: <span id="routeTime">...</span></p>
-                     <p>Nodes: <span id="routeNodes">...</span></p>
+                    <h3>Route Details</h3>
+                    <p>Distance: <span id="routeDistance">...</span></p>
+                    <p>Est. Time: <span id="routeTime">...</span></p>
                 </div>
             </div>
 

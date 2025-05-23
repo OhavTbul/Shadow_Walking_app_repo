@@ -1,21 +1,14 @@
-const CACHE_NAME = 'shadow-routes-cache-v1';
+const CACHE_NAME = 'shadow-route-cache-v1';
 // רשימת הקבצים לשמירה במטמון. התאימי אותה לקבצים האמיתיים בפרויקט שלך!
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/css/styles.css',
-    '/css/comparison.css', // אם עדיין רלוונטי
-    '/js/app.js',
-    '/js/map.js',
-    '/js/bottomSheet.js',
-    '/assets/bgu-logo.png', // אם זה הלוגו שלך
-    // הוסיפי כאן נתיבים לאייקונים שהגדרת במניפסט:
-    '/assets/icons/icon-192x192.jpg',
-    '/assets/icons/icon-512x512.jpg',
-    // אם יש לך עוד קבצי JS/CSS/תמונות חשובים, הוסיפי גם אותם
-    'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js',
-    'https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap' // שימי לב ששמירת קבצים חיצוניים יכולה להיות מורכבת יותר מבחינת CORS אם השרת החיצוני לא מאפשר
+  '/',
+  '/index.html',
+  '/css/base.css',
+  '/css/layout.css',
+  '/js/app.js',
+  '/js/map.js',
+  '/js/bottomSheet.js'
+  // הוסף רק קבצים שאתה בטוח שקיימים
 ];
 
 // התקנת ה-Service Worker ושמירת קבצים במטמון

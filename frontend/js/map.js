@@ -26,17 +26,30 @@ class MapManager {
         this.currentMapStyleKey = 'streets';
         this.comparisonStatsElement = document.getElementById('comparisonStatsDisplay');
         this.initializeMap();
+        this.initializeRouteControls();
     }
 
     initializeMap() {
         this.map = new maplibregl.Map({
             container: 'map',
             style: this.mapStyles.streets,
-            center: [34.8035, 31.2639], // BGU Coords
+            center: [34.8035, 31.2639],
             zoom: 16,
             pitch: 45,
             bearing: -17.6,
             antialias: true
+        });
+
+        // הוספת טיפול באייקונים חסרים
+        this.map.on('styleimagemissing', (e) => {
+            // יצירת אייקון ריק במקום האייקון החסר
+            const emptyImage = new Image();
+            emptyImage.width = 1;
+            emptyImage.height = 1;
+            const context = document.createElement('canvas').getContext('2d');
+            context.canvas.width = 1;
+            context.canvas.height = 1;
+            this.map.addImage(e.id, context.canvas);
         });
 
         this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
@@ -114,16 +127,18 @@ add3DBuildings() {
     handleMapClick(e) {
         if (!this.isSettingPoints) return;
         const lngLat = e.lngLat;
+        
         if (this.currentPoint === 'start') {
             this.setStartPoint(lngLat);
             this.currentPoint = 'end';
-            this.updateSetPointsButtonState(true, 'Tap map to set Destination');
-        } else {
+            this.updateRouteButtonsState('dest');
+            document.querySelector('.route-instruction').textContent = 'Touch the map to set destination point';
+        } else if (this.currentPoint === 'end') {
             this.setEndPoint(lngLat);
-            this.isSettingPoints = false;
-            this.currentPoint = 'start';
-            this.updateSetPointsButtonState(false);
-            this.calculateRoute();
+            this.currentPoint = 'complete';
+            this.updateRouteButtonsState('complete');
+            document.querySelector('.route-instruction').textContent = 'Press "Set Route" to calculate the route';
+            // הסרנו את הקריאה האוטומטית ל-calculateRoute
         }
     }
 
@@ -415,7 +430,7 @@ async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צלל
                 }
 
                 this.displayRoute(routeGeoJSON);
-                this.updateRouteInfo(data);
+                this.updateRouteInfo(data);  // וודא שזה נקרא
                 this.clearComparisonDisplay();
             } else {
                 throw new Error(data.error || 'Failed to calculate route or route is empty');
@@ -487,21 +502,21 @@ displayRoute(routeGeoJSON) {
     }
 
     updateRouteInfo(data) {
+        const routeInfoSection = document.getElementById('routeInfoSectionSheet');
         const distanceEl = document.getElementById('routeDistance');
         const timeEl = document.getElementById('routeTime');
-        const nodesEl = document.getElementById('routeNodes');
-        const sectionEl = document.getElementById('routeInfoSectionSheet');
-        if (distanceEl && timeEl && nodesEl && sectionEl) {
+
+        if (distanceEl && timeEl && routeInfoSection) {
             if (data && data.distance !== undefined) {
                 const distance = Math.round(data.distance);
                 const minutes = Math.round(distance / 84);
                 distanceEl.textContent = `${distance}m`;
                 timeEl.textContent = `~${minutes} min`;
-                nodesEl.textContent = data.nodes || 'N/A';
-                sectionEl.classList.remove('hidden');
+                routeInfoSection.classList.remove('hidden');  // וודא שה-hidden מוסר
             } else {
-                distanceEl.textContent = '...'; timeEl.textContent = '...';
-                nodesEl.textContent = '...'; sectionEl.classList.add('hidden');
+                distanceEl.textContent = '...';
+                timeEl.textContent = '...';
+                routeInfoSection.classList.add('hidden');
             }
         }
     }
@@ -816,6 +831,88 @@ updateLastShadowTimeDisplay(timestamp) {
         if (this.currentComparisonIndex < this.comparisonRoutes.length - 1) {
             this.currentComparisonIndex++; this.displayComparisonRoute(this.currentComparisonIndex);
         }
+    }
+
+    initializeRouteControls() {
+        const startBtn = document.getElementById('startPointBtn');
+        const destBtn = document.getElementById('destPointBtn');
+        const setRouteBtn = document.getElementById('setRouteBtn');
+        const instruction = document.querySelector('.route-instruction');
+
+        startBtn.addEventListener('click', () => {
+            // מחיקת כל המסלול והתחלה מחדש
+            this.clearRoute();
+            this.currentPoint = 'start';
+            this.isSettingPoints = true;
+            this.updateRouteButtonsState('start');
+            instruction.textContent = 'Touch the map to create a starting point';
+        });
+
+        destBtn.addEventListener('click', () => {
+            if (this.startPointCoords) {
+                // רק מחיקת נקודת היעד אם קיימת
+                if (this.endMarker) {
+                    this.endMarker.remove();
+                    this.endMarker = null;
+                    this.endPointCoords = null;
+                }
+                this.currentPoint = 'end';
+                this.isSettingPoints = true;
+                this.updateRouteButtonsState('dest');
+                instruction.textContent = 'Touch the map to set destination point';
+            }
+        });
+
+        setRouteBtn.addEventListener('click', () => {
+            if (this.startPointCoords && this.endPointCoords) {
+                this.calculateRoute();
+                this.isSettingPoints = false;
+                // אחרי חישוב המסלול, נסמן את כפתור ההתחלה ככתום
+                this.updateRouteButtonsState('ready_for_new');
+                instruction.textContent = 'Route calculated. Click Start to plan a new route';
+            }
+        });
+    }
+
+    updateRouteButtonsState(state) {
+        const startBtn = document.getElementById('startPointBtn');
+        const destBtn = document.getElementById('destPointBtn');
+        const setRouteBtn = document.getElementById('setRouteBtn');
+
+        // קודם מנקים את כל המצבים הפעילים
+        startBtn.classList.remove('active');
+        destBtn.classList.remove('active');
+        setRouteBtn.classList.remove('active');
+
+        switch(state) {
+            case 'start':
+                startBtn.classList.add('active');
+                break;
+            case 'dest':
+                destBtn.classList.add('active');
+                break;
+            case 'complete':
+                setRouteBtn.classList.add('active');
+                break;
+            case 'ready_for_new':
+                startBtn.classList.add('active'); // מדגיש את כפתור ההתחלה
+                break;
+        }
+    }
+
+    clearRoute() {
+        if (this.startMarker) {
+            this.startMarker.remove();
+            this.startMarker = null;
+            this.startPointCoords = null;
+        }
+        if (this.endMarker) {
+            this.endMarker.remove();
+            this.endMarker = null;
+            this.endPointCoords = null;
+        }
+        this.clearRouteDisplay();
+        this.updateRouteInfo(null);
     }
 }
 
