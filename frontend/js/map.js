@@ -72,58 +72,80 @@ class MapManager {
         });
     }
 
-add3DBuildings() {
-    // הסר שכבה קיימת אם יש
-    if (this.map.getLayer('3d-buildings')) {
+    add3DBuildings() {
+        console.log("add3DBuildings called - Current map style:", this.currentMapStyleKey);
+
+        // Remove existing layers if present
+        ['3d-buildings', '3d-buildings-base'].forEach(layerId => {
+            if (this.map.getLayer(layerId)) {
+                this.map.removeLayer(layerId);
+                console.log(`Removed existing ${layerId} layer`);
+            }
+        });
+
+        // Try different possible source names
+        const possibleSources = ['composite', 'openmaptiles', 'maptiler_planet'];
+        let sourceName = null;
+        let sourceLayerName = 'building';
+
+        for (const source of possibleSources) {
+            if (this.map.getSource(source)) {
+                sourceName = source;
+                break;
+            }
+        }
+
+        if (!sourceName) {
+            console.error("MapManager: No valid building source found. Cannot add 3D buildings.");
+            return;
+        }
+
+        console.log(`MapManager: Using building source "${sourceName}"`);
+
+        // Find a label layer to insert buildings before
+        const layers = this.map.getStyle().layers;
+        let labelLayerId;
+        for (let i = 0; i < layers.length; i++) {
+            if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
+                labelLayerId = layers[i].id;
+                break;
+            }
+        }
+
         try {
-            this.map.removeLayer('3d-buildings');
-        } catch (e) {
-            console.warn("MapManager: Failed to remove existing 3d-buildings layer", e);
+            // Add a single solid building layer
+            this.map.addLayer(
+                {
+                    'id': '3d-buildings',
+                    'source': sourceName,
+                    'source-layer': sourceLayerName,
+                    'type': 'fill-extrusion',
+                    'minzoom': 15,
+                    'paint': {
+                        'fill-extrusion-color': this.currentMapStyleKey === 'night' ? '#242424' : '#d9d3cc',
+                        'fill-extrusion-height': [
+                            'case',
+                            ['has', 'height'], ['get', 'height'],
+                            ['has', 'levels'], ['*', ['get', 'levels'], 3],
+                            15 // default height in meters if no height data
+                        ],
+                        'fill-extrusion-base': [
+                            'case',
+                            ['has', 'min_height'], ['get', 'min_height'],
+                            0 // default base height
+                        ],
+                        'fill-extrusion-opacity': this.currentMapStyleKey === 'night' ? 0.25 : 0.9,
+                        'fill-extrusion-vertical-gradient': true
+                    }
+                },
+                labelLayerId
+            );
+
+            console.log("3D buildings layer added successfully with refined appearance");
+        } catch (error) {
+            console.error("MapManager: Error adding 3D buildings layer:", error);
         }
     }
-
-    // קבע את source וה-layer לפי הסגנון הנוכחי
-    let sourceName = 'openmaptiles';
-    let sourceLayerName = 'building';
-
-    if (this.currentMapStyleKey === 'night') {
-        sourceName = 'maptiler_planet';
-        sourceLayerName = 'building';
-    }
-
-    // בדיקה שה-source באמת קיים
-    if (!this.map.getSource(sourceName)) {
-        console.warn(`MapManager: Source "${sourceName}" not found in current style "${this.currentMapStyleKey}". Cannot add 3D buildings.`);
-        return;
-    }
-
-    // מצא שכבת תוויות שנכניס לפניה
-    const layers = this.map.getStyle().layers;
-    let labelLayerId;
-    for (let i = 0; i < layers.length; i++) {
-        if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
-            labelLayerId = layers[i].id;
-            break;
-        }
-    }
-
-    // הוסף שכבת בניינים
-    this.map.addLayer({
-        'id': '3d-buildings',
-        'source': sourceName,
-        'source-layer': sourceLayerName,
-        'filter': ['==', 'extrude', 'true'],
-        'type': 'fill-extrusion',
-        'minzoom': 15,
-        'paint': {
-            'fill-extrusion-color': '#cccccc',
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
-            'fill-extrusion-opacity': 0.65
-        }
-    }, labelLayerId);
-}
-
 
     handleMapClick(e) {
         if (!this.isSettingPoints) {
@@ -147,208 +169,206 @@ add3DBuildings() {
         }
     }
 
-// בקובץ map.js, בתוך class MapManager
-setMapStyle(styleKey, newShadowDataForStyleArg) {
-    return new Promise((resolveOuter, rejectOuter) => { // Promise חיצוני
-        console.log(`MapManager: setMapStyle called. Target style: '${styleKey}'. Current style: '${this.currentMapStyleKey}'.`);
-        try {
-            console.log(`MapManager: newShadowDataForStyleArg received:`, newShadowDataForStyleArg ? JSON.parse(JSON.stringify(newShadowDataForStyleArg)) : 'null or undefined');
-        } catch (e) {
-            console.error("MapManager: Error stringifying newShadowDataForStyleArg for logging", e);
-            console.log("MapManager: newShadowDataForStyleArg (raw):", newShadowDataForStyleArg);
-        }
-
-        if (!this.map) {
-            // ... (טיפול בשגיאה נשאר אותו דבר)
-            return rejectOuter(new Error("MapManager: Map object is not initialized."));
-        }
-
-        const processShadows = () => {
-            // ... (הפונקציה processShadows נשארת כפי שהיא מההצעה הקודמת)
-            console.log(`MapManager: (processShadows) Called for style '${styleKey}'.`);
+    setMapStyle(styleKey, newShadowDataForStyleArg) {
+        return new Promise((resolveOuter, rejectOuter) => { // Promise חיצוני
+            console.log(`MapManager: setMapStyle called. Target style: '${styleKey}'. Current style: '${this.currentMapStyleKey}'.`);
             try {
-                console.log(`MapManager: (processShadows) newShadowDataForStyleArg available:`, newShadowDataForStyleArg ? JSON.parse(JSON.stringify(newShadowDataForStyleArg)) : 'null or undefined');
+                console.log(`MapManager: newShadowDataForStyleArg received:`, newShadowDataForStyleArg ? JSON.parse(JSON.stringify(newShadowDataForStyleArg)) : 'null or undefined');
             } catch (e) {
-                 console.error("MapManager: (processShadows) Error stringifying newShadowDataForStyleArg for logging", e);
-                 console.log("MapManager: (processShadows) newShadowDataForStyleArg (raw):", newShadowDataForStyleArg);
+                console.error("MapManager: Error stringifying newShadowDataForStyleArg for logging", e);
+                console.log("MapManager: newShadowDataForStyleArg (raw):", newShadowDataForStyleArg);
             }
 
-            if (styleKey !== 'night') {
-                if (newShadowDataForStyleArg && newShadowDataForStyleArg.features && newShadowDataForStyleArg.features.length > 0) {
-                    console.log("MapManager: (processShadows) Displaying NEW shadows for day style using newShadowDataForStyleArg.");
-                    this.displayShadows(newShadowDataForStyleArg);
+            if (!this.map) {
+                // ... (טיפול בשגיאה נשאר אותו דבר)
+                return rejectOuter(new Error("MapManager: Map object is not initialized."));
+            }
+
+            const processShadows = () => {
+                // ... (הפונקציה processShadows נשארת כפי שהיא מההצעה הקודמת)
+                console.log(`MapManager: (processShadows) Called for style '${styleKey}'.`);
+                try {
+                    console.log(`MapManager: (processShadows) newShadowDataForStyleArg available:`, newShadowDataForStyleArg ? JSON.parse(JSON.stringify(newShadowDataForStyleArg)) : 'null or undefined');
+                } catch (e) {
+                     console.error("MapManager: (processShadows) Error stringifying newShadowDataForStyleArg for logging", e);
+                     console.log("MapManager: (processShadows) newShadowDataForStyleArg (raw):", newShadowDataForStyleArg);
+                }
+
+                if (styleKey !== 'night') {
+                    if (newShadowDataForStyleArg && newShadowDataForStyleArg.features && newShadowDataForStyleArg.features.length > 0) {
+                        console.log("MapManager: (processShadows) Displaying NEW shadows for day style using newShadowDataForStyleArg.");
+                        this.displayShadows(newShadowDataForStyleArg);
+                    } else {
+                        console.log("MapManager: (processShadows) Day style, but newShadowDataForStyleArg is empty or invalid. Clearing display.");
+                        this.clearShadowDisplay();
+                    }
                 } else {
-                    console.log("MapManager: (processShadows) Day style, but newShadowDataForStyleArg is empty or invalid. Clearing display.");
+                    console.log("MapManager: (processShadows) Clearing shadow display because it's night style.");
                     this.clearShadowDisplay();
                 }
-            } else {
-                console.log("MapManager: (processShadows) Clearing shadow display because it's night style.");
-                this.clearShadowDisplay();
-            }
-        };
+            };
 
-        if (this.mapStyles[styleKey]) {
-            if (this.currentMapStyleKey !== styleKey) {
-                console.log(`MapManager: Style is different. Proceeding to change from '${this.currentMapStyleKey}' to '${styleKey}'.`);
-                let styleUrl = this.mapStyles[styleKey];
-                try {
-                    const urlObject = new URL(styleUrl);
-                    urlObject.searchParams.set('cb', new Date().getTime());
-                    styleUrl = urlObject.toString();
-                } catch (e) { /* שגיאה ב-cache busting, לא קריטי */ }
-
-                // ניצור Promise פנימי שיטפל בהמתנה לאירועי המפה
-                const styleChangePromise = new Promise((resolveInner, rejectInner) => {
-                    let settled = false;
-
-                    const onStyleData = () => {
-                        if (settled) return;
-                        this.map.off('error', onStyleError); // חשוב להסיר את המאזין השני
-                        console.log(`MapManager: (onStyleData for ${styleKey}) 'styledata' event completed. Re-adding base layers and processing shadows.`);
-
-                        this.add3DBuildings();
-                        if (this.lastRouteData) this.displayRoute(this.lastRouteData);
-
-                        processShadows();
-
-                        settled = true;
-                        resolveInner(); // Promise פנימי מסתיים
-                    };
-
-                    const onStyleError = (errEvent) => {
-                        if (settled) return;
-                        this.map.off('styledata', onStyleData); // חשוב להסיר את המאזין השני
-                        console.error(`MapManager: (onStyleError for ${styleKey}) Map error:`, errEvent);
-                        settled = true;
-                        rejectInner(new Error(`Failed to set map style to '${styleKey}' after an error event.`)); // Promise פנימי נדחה
-                    };
-
-                    this.currentMapStyleKey = styleKey;
-                    this.map.once('styledata', onStyleData);
-                    this.map.once('error', onStyleError);
-
+            if (this.mapStyles[styleKey]) {
+                if (this.currentMapStyleKey !== styleKey) {
+                    console.log(`MapManager: Style is different. Proceeding to change from '${this.currentMapStyleKey}' to '${styleKey}'.`);
+                    let styleUrl = this.mapStyles[styleKey];
                     try {
-                        this.map.setStyle(styleUrl);
-                        console.log(`MapManager: map.setStyle call initiated for '${styleKey}'.`);
-                    } catch (error) { // שגיאה סינכרונית מיידית מ-setStyle
-                        if (settled) return;
-                        this.map.off('styledata', onStyleData);
-                        this.map.off('error', onStyleError);
-                        console.error(`MapManager: Error immediately during map.setStyle for '${styleKey}':`, error);
-                        settled = true;
-                        rejectInner(error); // Promise פנימי נדחה
-                    }
-                });
+                        const urlObject = new URL(styleUrl);
+                        urlObject.searchParams.set('cb', new Date().getTime());
+                        styleUrl = urlObject.toString();
+                    } catch (e) { /* שגיאה ב-cache busting, לא קריטי */ }
 
-                // ה-Promise החיצוני ימתין ל-Promise הפנימי
-                styleChangePromise.then(() => {
-                    console.log(`MapManager: styleChangePromise for '${styleKey}' resolved. Resolving outer promise.`);
+                    // ניצור Promise פנימי שיטפל בהמתנה לאירועי המפה
+                    const styleChangePromise = new Promise((resolveInner, rejectInner) => {
+                        let settled = false;
+
+                        const onStyleData = () => {
+                            if (settled) return;
+                            this.map.off('error', onStyleError); // חשוב להסיר את המאזין השני
+                            console.log(`MapManager: (onStyleData for ${styleKey}) 'styledata' event completed. Re-adding base layers and processing shadows.`);
+
+                            this.add3DBuildings();
+                            if (this.lastRouteData) this.displayRoute(this.lastRouteData);
+
+                            processShadows();
+
+                            settled = true;
+                            resolveInner(); // Promise פנימי מסתיים
+                        };
+
+                        const onStyleError = (errEvent) => {
+                            if (settled) return;
+                            this.map.off('styledata', onStyleData); // חשוב להסיר את המאזין השני
+                            console.error(`MapManager: (onStyleError for ${styleKey}) Map error:`, errEvent);
+                            settled = true;
+                            rejectInner(new Error(`Failed to set map style to '${styleKey}' after an error event.`)); // Promise פנימי נדחה
+                        };
+
+                        this.currentMapStyleKey = styleKey;
+                        this.map.once('styledata', onStyleData);
+                        this.map.once('error', onStyleError);
+
+                        try {
+                            this.map.setStyle(styleUrl);
+                            console.log(`MapManager: map.setStyle call initiated for '${styleKey}'.`);
+                        } catch (error) { // שגיאה סינכרונית מיידית מ-setStyle
+                            if (settled) return;
+                            this.map.off('styledata', onStyleData);
+                            this.map.off('error', onStyleError);
+                            console.error(`MapManager: Error immediately during map.setStyle for '${styleKey}':`, error);
+                            settled = true;
+                            rejectInner(error); // Promise פנימי נדחה
+                        }
+                    });
+
+                    // ה-Promise החיצוני ימתין ל-Promise הפנימי
+                    styleChangePromise.then(() => {
+                        console.log(`MapManager: styleChangePromise for '${styleKey}' resolved. Resolving outer promise.`);
+                        resolveOuter();
+                    }).catch((error) => {
+                        console.error(`MapManager: styleChangePromise for '${styleKey}' rejected. Rejecting outer promise.`, error);
+                        this.showError(error.message || `Failed to set style ${styleKey}`);
+                        rejectOuter(error);
+                    });
+
+                } else { // Style is already the target style
+                    console.log(`MapManager: Map style is already '${styleKey}'. No style change needed. Ensuring shadow display is correct.`);
+                    this.add3DBuildings();
+                    if (this.lastRouteData) this.displayRoute(this.lastRouteData);
+
+                    processShadows();
                     resolveOuter();
-                }).catch((error) => {
-                    console.error(`MapManager: styleChangePromise for '${styleKey}' rejected. Rejecting outer promise.`, error);
-                    this.showError(error.message || `Failed to set style ${styleKey}`);
-                    rejectOuter(error);
-                });
-
-            } else { // Style is already the target style
-                console.log(`MapManager: Map style is already '${styleKey}'. No style change needed. Ensuring shadow display is correct.`);
-                this.add3DBuildings();
-                if (this.lastRouteData) this.displayRoute(this.lastRouteData);
-
-                processShadows();
-                resolveOuter();
+                }
+            } else {
+                // ... (טיפול בשגיאה נשאר אותו דבר)
+                rejectOuter(new Error(`Style key "${styleKey}" not found`));
             }
-        } else {
-            // ... (טיפול בשגיאה נשאר אותו דבר)
-            rejectOuter(new Error(`Style key "${styleKey}" not found`));
-        }
-    });
-}
-// בקובץ map.js, בתוך class MapManager
-async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צללים עתידיים...') {
-    this.showLoading(loadingMessage);
-    try {
-        const response = await fetch('/shadows_at_time', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ datetime_str: dateTimeString }),
         });
-        const data = await response.json();
-
-        if (!response.ok) {
-            const errorMsgFromServer = data.error || `שגיאה ${response.status} בטעינת צללים מהשרת`;
-            throw new Error(errorMsgFromServer);
-        }
-
-        this.lastShadowUpdateTime = new Date(data.requested_time);
-        this.updateLastShadowTimeDisplay(this.lastShadowUpdateTime);
-
-        let geojsonData = null;
-        if (data.shadows) {
-            // ודא ש-data.shadows אינו מחרוזת ריקה לפני ניסיון ה-JSON.parse
-            if (typeof data.shadows === 'string' && data.shadows.trim() !== '') {
-                try {
-                    geojsonData = JSON.parse(data.shadows);
-                } catch (parseError) {
-                    console.error("MapManager: Error parsing data.shadows JSON string:", parseError, "Raw data.shadows:", data.shadows);
-                    // השאר את geojsonData כ-null אם יש שגיאת parse
-                }
-            } else if (typeof data.shadows === 'object' && data.shadows !== null) {
-                geojsonData = data.shadows;
-            }
-        }
-
-        const hasShadows = geojsonData && geojsonData.features && geojsonData.features.length > 0;
-        const serverIndicatesNoShadows = data.message && (data.message.toLowerCase().includes('night') || data.message.toLowerCase().includes('no shadow'));
-        const newStyleKey = (hasShadows && !serverIndicatesNoShadows) ? 'streets' : 'night';
-
-        // הדפסות דיבאג חשובות:
-        console.log(`loadShadowsForFutureTime: For time ${dateTimeString}`);
-        console.log(`loadShadowsForFutureTime: hasShadows = ${hasShadows}, serverIndicatesNoShadows = ${serverIndicatesNoShadows}, calculated newStyleKey = ${newStyleKey}`);
-
-        let geojsonDataForLog = 'null or undefined';
-        if (geojsonData) {
-            try {
-                // ננסה להדפיס רק חלק קטן אם האובייקט גדול מאוד
-                if (geojsonData.features && geojsonData.features.length > 5) {
-                    geojsonDataForLog = `FeatureCollection with ${geojsonData.features.length} features (showing first 5): ` +
-                                        JSON.stringify({ type: geojsonData.type, features: geojsonData.features.slice(0,5) });
-                } else {
-                    geojsonDataForLog = JSON.parse(JSON.stringify(geojsonData));
-                }
-            } catch (e) {
-                geojsonDataForLog = "Error stringifying geojsonData for detailed logging";
-            }
-        }
-        console.log(`loadShadowsForFutureTime: geojsonData being passed to setMapStyle:`, geojsonDataForLog);
-
-        // !!! בדיקה קריטית עם alert ו-console.error !!!
-        if (newStyleKey === 'streets') {
-            console.error(`>>> CRITICAL DEBUG (loadShadowsForFutureTime): About to call setMapStyle for STREETS. geojsonData features count: ${geojsonData && geojsonData.features ? geojsonData.features.length : 'N/A'}`, geojsonData);
-            await this.setMapStyle(newStyleKey, geojsonData);
-            console.log('MapManager: Successfully called setMapStyle for streets with (potentially new) shadow data.');
-        } else { // newStyleKey === 'night'
-            console.error(">>> CRITICAL DEBUG (loadShadowsForFutureTime): About to call setMapStyle for NIGHT.");
-            await this.setMapStyle(newStyleKey, null);
-            console.log('MapManager: Successfully called setMapStyle for night with null shadow data.');
-            if (serverIndicatesNoShadows && data.message) {
-                 console.log('Server message:', data.message);
-            }
-        }
-
-        return data.requested_time;
-
-    } catch (error) {
-        console.error('MapManager - loadShadowsForFutureTime error:', error);
-        this.showError(error.message || 'שגיאה כללית בטעינת צללים עתידיים.');
-        // במקרה של שגיאה, אולי כדאי לחזור לסגנון ברירת מחדל בטוח
-        // await this.setMapStyle('streets', null); // לדוגמה, חזרה ליום ללא צללים
-        throw error;
-    } finally {
-        this.hideLoading();
     }
-}
 
+    async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צללים עתידיים...') {
+        this.showLoading(loadingMessage);
+        try {
+            const response = await fetch('/shadows_at_time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datetime_str: dateTimeString }),
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                const errorMsgFromServer = data.error || `שגיאה ${response.status} בטעינת צללים מהשרת`;
+                throw new Error(errorMsgFromServer);
+            }
+
+            this.lastShadowUpdateTime = new Date(data.requested_time);
+            this.updateLastShadowTimeDisplay(this.lastShadowUpdateTime);
+
+            let geojsonData = null;
+            if (data.shadows) {
+                // ודא ש-data.shadows אינו מחרוזת ריקה לפני ניסיון ה-JSON.parse
+                if (typeof data.shadows === 'string' && data.shadows.trim() !== '') {
+                    try {
+                        geojsonData = JSON.parse(data.shadows);
+                    } catch (parseError) {
+                        console.error("MapManager: Error parsing data.shadows JSON string:", parseError, "Raw data.shadows:", data.shadows);
+                        // השאר את geojsonData כ-null אם יש שגיאת parse
+                    }
+                } else if (typeof data.shadows === 'object' && data.shadows !== null) {
+                    geojsonData = data.shadows;
+                }
+            }
+
+            const hasShadows = geojsonData && geojsonData.features && geojsonData.features.length > 0;
+            const serverIndicatesNoShadows = data.message && (data.message.toLowerCase().includes('night') || data.message.toLowerCase().includes('no shadow'));
+            const newStyleKey = (hasShadows && !serverIndicatesNoShadows) ? 'streets' : 'night';
+
+            // הדפסות דיבאג חשובות:
+            console.log(`loadShadowsForFutureTime: For time ${dateTimeString}`);
+            console.log(`loadShadowsForFutureTime: hasShadows = ${hasShadows}, serverIndicatesNoShadows = ${serverIndicatesNoShadows}, calculated newStyleKey = ${newStyleKey}`);
+
+            let geojsonDataForLog = 'null or undefined';
+            if (geojsonData) {
+                try {
+                    // ננסה להדפיס רק חלק קטן אם האובייקט גדול מאוד
+                    if (geojsonData.features && geojsonData.features.length > 5) {
+                        geojsonDataForLog = `FeatureCollection with ${geojsonData.features.length} features (showing first 5): ` +
+                                            JSON.stringify({ type: geojsonData.type, features: geojsonData.features.slice(0,5) });
+                    } else {
+                        geojsonDataForLog = JSON.parse(JSON.stringify(geojsonData));
+                    }
+                } catch (e) {
+                    geojsonDataForLog = "Error stringifying geojsonData for detailed logging";
+                }
+            }
+            console.log(`loadShadowsForFutureTime: geojsonData being passed to setMapStyle:`, geojsonDataForLog);
+
+            // !!! בדיקה קריטית עם alert ו-console.error !!!
+            if (newStyleKey === 'streets') {
+                console.error(`>>> CRITICAL DEBUG (loadShadowsForFutureTime): About to call setMapStyle for STREETS. geojsonData features count: ${geojsonData && geojsonData.features ? geojsonData.features.length : 'N/A'}`, geojsonData);
+                await this.setMapStyle(newStyleKey, geojsonData);
+                console.log('MapManager: Successfully called setMapStyle for streets with (potentially new) shadow data.');
+            } else { // newStyleKey === 'night'
+                console.error(">>> CRITICAL DEBUG (loadShadowsForFutureTime): About to call setMapStyle for NIGHT.");
+                await this.setMapStyle(newStyleKey, null);
+                console.log('MapManager: Successfully called setMapStyle for night with null shadow data.');
+                if (serverIndicatesNoShadows && data.message) {
+                     console.log('Server message:', data.message);
+                }
+            }
+
+            return data.requested_time;
+
+        } catch (error) {
+            console.error('MapManager - loadShadowsForFutureTime error:', error);
+            this.showError(error.message || 'שגיאה כללית בטעינת צללים עתידיים.');
+            // במקרה של שגיאה, אולי כדאי לחזור לסגנון ברירת מחדל בטוח
+            // await this.setMapStyle('streets', null); // לדוגמה, חזרה ליום ללא צללים
+            throw error;
+        } finally {
+            this.hideLoading();
+        }
+    }
 
     setStartPoint(lngLat) {
         if (this.startMarker) this.startMarker.remove();
@@ -455,54 +475,53 @@ async loadShadowsForFutureTime(dateTimeString, loadingMessage = 'טוען צלל
         };
     }
 
-displayRoute(routeGeoJSON) {
-    this.lastRouteData = routeGeoJSON;
+    displayRoute(routeGeoJSON) {
+        this.lastRouteData = routeGeoJSON;
 
-    const source = this.map.getSource('route');
-    if (source) {
-        source.setData(routeGeoJSON);
-    } else {
-        this.map.addSource('route', { type: 'geojson', data: routeGeoJSON });
+        const source = this.map.getSource('route');
+        if (source) {
+            source.setData(routeGeoJSON);
+        } else {
+            this.map.addSource('route', { type: 'geojson', data: routeGeoJSON });
 
-        let beforeLayerId = '3d-buildings';
-        if (!this.map.getLayer(beforeLayerId)) {
-            const layers = this.map.getStyle().layers;
-            for (let i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
-                    beforeLayerId = layers[i].id;
-                    break;
+            let beforeLayerId = '3d-buildings';
+            if (!this.map.getLayer(beforeLayerId)) {
+                const layers = this.map.getStyle().layers;
+                for (let i = 0; i < layers.length; i++) {
+                    if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
+                        beforeLayerId = layers[i].id;
+                        break;
+                    }
                 }
             }
+
+            // קבע את צבע המסלול בהתאם למצב המפה
+            const routeColor = this.currentMapStyleKey === 'night' ? '#ffeb3b' : '#2563eb';
+            const routeOpacity = this.currentMapStyleKey === 'night' ? 1 : 0.85;
+
+            this.map.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: {
+                    'line-color': routeColor,
+                    'line-width': 5,
+                    'line-opacity': routeOpacity
+                }
+            }, beforeLayerId);
         }
 
-        // קבע את צבע המסלול בהתאם למצב המפה
-        const routeColor = this.currentMapStyleKey === 'night' ? '#ffeb3b' : '#2563eb';
-        const routeOpacity = this.currentMapStyleKey === 'night' ? 1 : 0.85;
-
-        this.map.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: {
-                'line-color': routeColor,
-                'line-width': 5,
-                'line-opacity': routeOpacity
-            }
-        }, beforeLayerId);
+        if (routeGeoJSON.geometry.coordinates.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            routeGeoJSON.geometry.coordinates.forEach(coord => bounds.extend(coord));
+            this.map.fitBounds(bounds, {
+                padding: { top: 50, bottom: 150, left: 50, right: 50 },
+                duration: 1000,
+                maxZoom: 17
+            });
+        }
     }
-
-    if (routeGeoJSON.geometry.coordinates.length > 0) {
-        const bounds = new maplibregl.LngLatBounds();
-        routeGeoJSON.geometry.coordinates.forEach(coord => bounds.extend(coord));
-        this.map.fitBounds(bounds, {
-            padding: { top: 50, bottom: 150, left: 50, right: 50 },
-            duration: 1000,
-            maxZoom: 17
-        });
-    }
-}
-
 
     clearRouteDisplay() {
         if (this.map.getLayer('route')) this.map.removeLayer('route');
@@ -564,7 +583,6 @@ stopShadowAutoRefresh() {
     }
 }
 
-
     // פונקציה לטעינה ראשונית של צללים (צללי "עכשיו" מהשרת)
     async loadInitialShadows() {
         this.showLoading('טוען צללים...');
@@ -593,97 +611,95 @@ stopShadowAutoRefresh() {
         }
     }
 
-
-// בתוך map.js
-
-displayShadows(geojson) {
-    console.log("MapManager: (displayShadows) Displaying shadows. Data:", geojson ? "Exists" : "null/undefined");
-    this.lastShadowsData = geojson; // <<<< עדכון חשוב כאן
-    const source = this.map.getSource('shadows');
-    if (source) {
-        source.setData(geojson);
-        console.log("MapManager: (displayShadows) Updated existing shadows source.");
-    } else {
-        this.map.addSource('shadows', { type: 'geojson', data: geojson });
-        const layers = this.map.getStyle().layers;
-        let labelLayerId;
-        // מנסה למצוא שכבת תוויות כדי לשים את שכבת הצללים לפניה
-        for (let i = 0; i < layers.length; i++) {
-            if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
-                labelLayerId = layers[i].id;
-                break;
-            }
+    displayShadows(geojson) {
+        console.log("MapManager: (displayShadows) Displaying shadows. Data:", geojson ? "Exists" : "null/undefined");
+        
+        // Clean up existing layers and sources
+        this.clearShadowDisplay();
+        if (this.map.getLayer('3d-buildings')) {
+            this.map.removeLayer('3d-buildings');
         }
-        // אם קיימת שכבת מסלול, שים את הצללים לפניה, אחרת לפני שכבת התוויות (אם נמצאה)
-        const beforeLayerId = this.map.getLayer('route') ? 'route' : labelLayerId;
 
+        // Add shadows source
+        this.map.addSource('shadows', { type: 'geojson', data: geojson });
+        this.lastShadowsData = geojson;
+
+        // Get all current layers
+        const style = this.map.getStyle();
+        const layers = style.layers;
+        
+        // Find the first symbol or fill-extrusion layer to add shadows before it
+        const targetLayerId = layers.find(layer => 
+            layer.type === 'symbol' || 
+            layer.type === 'fill-extrusion' ||
+            (layer.type === 'fill' && layer.id !== 'background')
+        )?.id;
+
+        // Add shadows just above the background but below other layers
         this.map.addLayer({
             id: 'shadows',
             type: 'fill',
             source: 'shadows',
             paint: {
-                'fill-color': 'rgba(0, 0, 0, 0.3)',
-                'fill-opacity': 0.7,
+                'fill-color': 'rgba(0, 0, 0, 0.25)', // צל יותר עדין
+                'fill-opacity': 0.7, // שקיפות מוגברת
                 'fill-outline-color': 'transparent'
             }
-        }, beforeLayerId); // אם beforeLayerId הוא undefined, השכבה תתווסף בסוף
-        console.log("MapManager: (displayShadows) Added new shadows source and layer. Before layer:", beforeLayerId);
-    }
-}
+        }, targetLayerId);
 
-clearShadowDisplay() {
-    console.log("MapManager: (clearShadowDisplay) Clearing shadow display.");
-    this.lastShadowsData = null; // <<<< עדכון חשוב כאן
-    if (this.map.getLayer('shadows')) {
-        this.map.removeLayer('shadows');
-        console.log("MapManager: (clearShadowDisplay) Removed shadows layer.");
-    }
-    if (this.map.getSource('shadows')) {
-        this.map.removeSource('shadows');
-        console.log("MapManager: (clearShadowDisplay) Removed shadows source.");
-    }
-}
+        // Add buildings on top of everything
+        this.add3DBuildings();
 
-    // In map.js, inside MapManager class
-updateLastShadowTimeDisplay(timestamp) {
-    const displayElement = document.getElementById('shadowUpdateTimeDisplay');
-    console.log("MapManager: updateLastShadowTimeDisplay called with:", timestamp); // הדפסת בדיקה
-    if (displayElement) {
-        if (timestamp) {
-            try {
-                const dateObj = new Date(timestamp);
-                const timeString = dateObj.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-                displayElement.textContent = `צללים עודכנו לאחרונה: ${timeString}`;
-            } catch (e) {
-                displayElement.textContent = 'שגיאה בעדכון זמן הצללים';
-                console.error("MapManager: Error formatting shadow update time:", e);
+        console.log("MapManager: (displayShadows) Added shadows below buildings");
+    }
+
+    clearShadowDisplay() {
+        console.log("MapManager: (clearShadowDisplay) Clearing shadow display.");
+        this.lastShadowsData = null; // <<<< עדכון חשוב כאן
+        if (this.map.getLayer('shadows')) {
+            this.map.removeLayer('shadows');
+            console.log("MapManager: (clearShadowDisplay) Removed shadows layer.");
+        }
+        if (this.map.getSource('shadows')) {
+            this.map.removeSource('shadows');
+            console.log("MapManager: (clearShadowDisplay) Removed shadows source.");
+        }
+    }
+
+    updateLastShadowTimeDisplay(timestamp) {
+        const displayElement = document.getElementById('shadowUpdateTimeDisplay');
+        console.log("MapManager: updateLastShadowTimeDisplay called with:", timestamp);
+        if (displayElement) {
+            if (timestamp) {
+                try {
+                    const dateObj = new Date(timestamp);
+                    const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                    displayElement.textContent = `Shadows last updated: ${timeString}`;
+                } catch (e) {
+                    displayElement.textContent = 'Error updating shadow time';
+                    console.error("MapManager: Error formatting shadow update time:", e);
+                }
+            } else {
+                displayElement.textContent = 'Loading shadow data...';
             }
         } else {
-            displayElement.textContent = 'טוען מידע על צללים...';
+            console.warn("MapManager: Element with ID 'shadowUpdateTimeDisplay' not found.");
         }
-    } else {
-        console.warn("MapManager: Element with ID 'shadowUpdateTimeDisplay' not found.");
     }
-}
-
-
 
     async resetShadowsToCurrentTime() {
-    // ... (קוד ליצירת nowDateTimeString) ...
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const nowDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        // ... (קוד ליצירת nowDateTimeString) ...
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const nowDateTimeString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 
-    return this.loadShadowsForFutureTime(nowDateTimeString, 'טוען צללים נוכחיים...'); // <<-- הנקודה החשובה
-}
-
-    // --- סוף פונקציות תכנון עתידי ---
-
+        return this.loadShadowsForFutureTime(nowDateTimeString, 'טוען צללים נוכחיים...'); // <<-- הנקודה החשובה
+    }
 
     setShadeWeight(weight) {
         this.shadeWeight = parseFloat(weight);
