@@ -320,36 +320,69 @@ async function saveFavorite() {
     const favDestEl = document.getElementById('favDestNameSheet');
     const favoritesStatusMessage = document.querySelector('#favoritesTabContent .status-message');
 
-    if (!window.mapManager || !window.mapManager.getCurrentPoints) {
-        if(favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Map is not ready.", true);
+    // Validate that both fields have values
+    if (!favOriginEl.value.trim() || !favDestEl.value.trim()) {
+        if (favoritesStatusMessage) {
+            favoritesStatusMessage.style.color = '#dc2626'; // Error color (red)
+            favoritesStatusMessage.textContent = 'Please enter names for both points';
+        }
         return;
     }
+
+    if (!window.mapManager || !window.mapManager.getCurrentPoints) {
+        if(favoritesStatusMessage) {
+            favoritesStatusMessage.style.color = '#dc2626';
+            favoritesStatusMessage.textContent = "Map is not ready.";
+        }
+        return;
+    }
+
     const { start, dest } = window.mapManager.getCurrentPoints();
     if (!start || !dest) {
-        if(favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Set start and end points first.", true);
+        if(favoritesStatusMessage) {
+            favoritesStatusMessage.style.color = '#dc2626';
+            favoritesStatusMessage.textContent = "Set start and end points first.";
+        }
         return;
     }
 
     try {
         const body = {
-            origin: [start.lat, start.lng], dest: [dest.lat, dest.lng],
-            origin_name: favOriginEl.value.trim() || null,
-            dest_name: favDestEl.value.trim() || null
+            origin: [start.lat, start.lng],
+            dest: [dest.lat, dest.lng],
+            origin_name: favOriginEl.value.trim(),
+            dest_name: favDestEl.value.trim()
         };
-        if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Saving favorite...", false, 0);
+
+        if (favoritesStatusMessage) {
+            favoritesStatusMessage.style.color = '#4b5563';
+            favoritesStatusMessage.textContent = "Saving favorite...";
+        }
+
         const res = await fetch('/api/favorites', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `Failed to save favorite.`);
 
-        favOriginEl.value = ''; favDestEl.value = '';
+        favOriginEl.value = '';
+        favDestEl.value = '';
         await loadFavorites();
-        if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, "Favorite saved successfully!", false);
+
+        if (favoritesStatusMessage) {
+            favoritesStatusMessage.style.color = '#059669'; // Success color (green)
+            favoritesStatusMessage.textContent = "Favorite saved successfully!";
+            setTimeout(() => switchFavoritesSection('view'), 1500);
+        }
     } catch (error) {
         console.error("Error saving favorite:", error);
-        if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, error.message, true);
+        if (favoritesStatusMessage) {
+            favoritesStatusMessage.style.color = '#dc2626';
+            favoritesStatusMessage.textContent = error.message;
+        }
     }
 }
 
@@ -405,6 +438,102 @@ async function deleteFavorite() {
         console.error('Error deleting favorite:', error);
         if (favoritesStatusMessage) showUserMessage(favoritesStatusMessage, error.message, true);
     }
+}
+
+// Favorites navigation
+const viewFavoritesBtn = document.getElementById('viewFavoritesBtn');
+const addFavoriteBtn = document.getElementById('addFavoriteBtn');
+const viewFavoritesSection = document.getElementById('viewFavoritesSection');
+const addFavoriteSection = document.getElementById('addFavoriteSection');
+
+function switchFavoritesSection(section) {
+    console.log('Switching favorites section to:', section);
+    
+    // Update buttons
+    if (viewFavoritesBtn && addFavoriteBtn) {
+        viewFavoritesBtn.classList.toggle('active', section === 'view');
+        addFavoriteBtn.classList.toggle('active', section === 'add');
+    }
+    
+    // Update sections
+    if (viewFavoritesSection && addFavoriteSection) {
+        viewFavoritesSection.classList.toggle('active', section === 'view');
+        viewFavoritesSection.classList.toggle('hidden', section !== 'view');
+        addFavoriteSection.classList.toggle('active', section === 'add');
+        addFavoriteSection.classList.toggle('hidden', section !== 'add');
+    }
+
+    // If switching to add section, check if route is set
+    if (section === 'add') {
+        const currentPoints = window.mapManager?.getCurrentPoints?.();
+        const hasValidRoute = currentPoints?.start && currentPoints?.dest;
+        
+        if (!hasValidRoute) {
+            // Switch to route tab to set points
+            const tabRouteButton = document.getElementById('tabRoute');
+            if (tabRouteButton) {
+                tabRouteButton.click();
+                
+                // Show message to user
+                const routeInstruction = document.querySelector('.route-instruction');
+                if (routeInstruction) {
+                    routeInstruction.textContent = 'Set start and end points to add to favorites';
+                }
+
+                // Enable point setting mode
+                if (window.mapManager) {
+                    window.mapManager.isSettingPoints = true;
+                    window.mapManager.updateSetPointsButtonState(true);
+                }
+
+                // Add one-time listener for route calculation completion
+                const originalCalculateRoute = window.mapManager.calculateRoute;
+                window.mapManager.calculateRoute = function() {
+                    originalCalculateRoute.apply(this, arguments);
+                    
+                    // Switch back to favorites tab and add section after route is calculated
+                    const tabFavoritesButton = document.getElementById('tabFavorites');
+                    if (tabFavoritesButton) {
+                        setTimeout(() => {
+                            tabFavoritesButton.click();
+                            const addFavBtn = document.getElementById('addFavoriteBtn');
+                            if (addFavBtn) {
+                                addFavBtn.click();
+                            }
+                        }, 500);
+                    }
+                    
+                    // Restore original function
+                    window.mapManager.calculateRoute = originalCalculateRoute;
+                };
+            }
+        } else {
+            // Show the add favorite section with current route info
+            const favoritesStatusMessage = document.querySelector('#favoritesTabContent .status-message');
+            if (favoritesStatusMessage) {
+                favoritesStatusMessage.style.color = '#4b5563'; // Changed to gray
+                favoritesStatusMessage.textContent = 'Name your route and click save to add it to favorites';
+            }
+            
+            // Clear any existing values in the input fields
+            const originInput = document.getElementById('favOriginNameSheet');
+            const destInput = document.getElementById('favDestNameSheet');
+            
+            if (originInput) {
+                originInput.value = '';
+                originInput.focus();
+            }
+            
+            if (destInput) {
+                destInput.value = '';
+            }
+        }
+    }
+}
+
+if (viewFavoritesBtn && addFavoriteBtn) {
+    viewFavoritesBtn.addEventListener('click', () => switchFavoritesSection('view'));
+    addFavoriteBtn.addEventListener('click', () => switchFavoritesSection('add'));
 }
 
 document.addEventListener('DOMContentLoaded', () => {

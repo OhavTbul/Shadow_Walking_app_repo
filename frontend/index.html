@@ -202,17 +202,52 @@
             </div>
 
             <div id="favoritesTabContent" class="tab-content hidden">
-                <div id="favoritesSectionSheet" class="control-section"> <h3>My Favorite Routes</h3>
-                    <input type="text" id="favOriginNameSheet" placeholder="Origin Name" class="sheet-input">
-                    <input type="text" id="favDestNameSheet" placeholder="Destination Name" class="sheet-input" style="margin-top: 8px;">
-                    <button id="saveFavBtnSheet" class="sheet-button" style="margin-top: 10px;">Save Current Route as Favorite</button>
-                    <select id="favListSheet" class="sheet-input" style="margin-top: 8px; width: 100%;"></select>
-                    <div style="margin-top: 8px;">
-                        <button id="calcFavBtnSheet" class="sheet-button" disabled>Show This Favorite</button>
-                        <button id="deleteFavBtnSheet" class="sheet-button danger-btn" disabled>Delete This Favorite</button>
-                    </div>
-                    <p class="status-message" style="font-size: 0.9em; margin-top: 8px;"></p>
+                <!-- Navigation buttons for sub-views -->
+                <div class="favorites-nav-buttons">
+                    <button id="viewFavoritesBtn" class="tab-button active">
+                        <i class="fas fa-list"></i>
+                        <span>View Favorites</span>
+                    </button>
+                    <button id="addFavoriteBtn" class="tab-button">
+                        <i class="fas fa-plus"></i>
+                        <span>Add New</span>
+                    </button>
                 </div>
+
+                <!-- View Favorites Section -->
+                <div id="viewFavoritesSection" class="favorites-section active">
+                    <div class="control-section">
+                        <h3>My Favorite Routes</h3>
+                        <select id="favListSheet" class="sheet-input" style="margin-top: 8px; width: 100%;"></select>
+                        <div style="margin-top: 8px;">
+                            <button id="calcFavBtnSheet" class="sheet-button" disabled>Show This Favorite</button>
+                            <button id="deleteFavBtnSheet" class="sheet-button danger-btn" disabled>Delete This Favorite</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add New Favorite Section -->
+                <div id="addFavoriteSection" class="favorites-section hidden">
+                    <div class="control-section">
+                        <h3>Add New Favorite Route</h3>
+                        <p class="add-favorite-instruction" style="margin-bottom: 12px; color: #666;">
+                            Name your route to save it as a favorite
+                        </p>
+                        <div class="input-group">
+                            <label for="favOriginNameSheet">Starting Point:</label>
+                            <input type="text" id="favOriginNameSheet" placeholder="Enter starting point name" class="sheet-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="favDestNameSheet">Destination Point:</label>
+                            <input type="text" id="favDestNameSheet" placeholder="Enter destination name" class="sheet-input">
+                        </div>
+                        <button id="saveFavBtnSheet" class="sheet-button button-gradient button-gradient-orange" aria-label="Save to favorites">
+                            <i class="fas fa-save fa-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <p class="status-message" style="font-size: 0.9em; margin-top: 8px; text-align: center;"></p>
             </div>
         </div> </div> </div>
 

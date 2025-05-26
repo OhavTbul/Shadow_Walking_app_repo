@@ -1,4 +1,3 @@
-
 /* טאבים במודאל האימות /
 .auth-tabs {
 display: flex;
@@ -9,3 +8,96 @@ gap: 10px;
 / .tab-button כבר מוגדר ב-buttons.css */
 
 /* אם יש לך סגנונות ניווט אחרים, למשל בתוך ה-bottomSheet */
+
+/* Favorites Navigation */
+.favorites-nav-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 0 16px;
+}
+
+.favorites-nav-buttons .tab-button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.favorites-nav-buttons .tab-button.active {
+    background: #2563eb;
+    color: white;
+}
+
+.favorites-nav-buttons .tab-button:hover:not(.active) {
+    background: #e5e7eb;
+}
+
+.favorites-section {
+    display: none;
+    padding: 0 16px;
+}
+
+.favorites-section.active {
+    display: block;
+}
+
+.favorites-section .control-section {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.favorites-section .sheet-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.favorites-section .button-gradient {
+    margin-top: 16px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Save button specific styles */
+#saveFavBtnSheet {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#saveFavBtnSheet i {
+    font-size: 24px;
+}
+
+.favorites-section .input-group {
+    margin-bottom: 16px;
+}
+
+.favorites-section .input-group label {
+    display: block;
+    margin-bottom: 4px;
+    color: #4b5563;
+    font-weight: 500;
+}
