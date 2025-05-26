@@ -475,17 +475,21 @@ displayRoute(routeGeoJSON) {
             }
         }
 
+        // קבע את צבע המסלול בהתאם למצב המפה
+        const routeColor = this.currentMapStyleKey === 'night' ? '#ffeb3b' : '#2563eb';
+        const routeOpacity = this.currentMapStyleKey === 'night' ? 1 : 0.85;
+
         this.map.addLayer({
             id: 'route',
             type: 'line',
             source: 'route',
             layout: { 'line-join': 'round', 'line-cap': 'round' },
             paint: {
-                'line-color': '#2563eb',
+                'line-color': routeColor,
                 'line-width': 5,
-                'line-opacity': 0.85
+                'line-opacity': routeOpacity
             }
-        }, beforeLayerId); // if beforeLayerId is undefined, it will add it last
+        }, beforeLayerId);
     }
 
     if (routeGeoJSON.geometry.coordinates.length > 0) {
