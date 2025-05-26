@@ -1,43 +1,95 @@
-/* טאבים במודאל האימות /
+/* טאבים במודאל האימות */
 .auth-tabs {
-display: flex;
-justify-content: center;
-margin-bottom: 20px;
-gap: 10px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 10px;
 }
-/ .tab-button כבר מוגדר ב-buttons.css */
 
 /* אם יש לך סגנונות ניווט אחרים, למשל בתוך ה-bottomSheet */
 
 /* Favorites Navigation */
 .favorites-nav-buttons {
     display: flex;
+    justify-content: center;
     gap: 8px;
     margin-bottom: 16px;
-    padding: 0 16px;
 }
 
 .favorites-nav-buttons .tab-button {
-    flex: 1;
-    padding: 8px;
-    border-radius: 8px;
-    background: #f3f4f6;
-    border: none;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--gray-light);
+    border-radius: 8px;
+    color: var(--gray-medium);
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
+.favorites-nav-buttons .tab-button:hover {
+    background: var(--gray-light);
+    color: var(--orange-light-color);
+}
+
 .favorites-nav-buttons .tab-button.active {
-    background: #2563eb;
+    background: var(--orange-main-color);
+    border-color: var(--orange-main-color);
     color: white;
 }
 
-.favorites-nav-buttons .tab-button:hover:not(.active) {
-    background: #e5e7eb;
+.favorites-nav-buttons .tab-button.active:hover {
+    background: var(--orange-light-color);
+    border-color: var(--orange-light-color);
+}
+
+/* Mobile Styles */
+@media (max-width: 600px) {
+    .favorites-nav-buttons {
+        padding: 12px;
+        gap: 20px;
+    }
+
+    .favorites-nav-buttons .tab-button {
+        padding: 8px 4px;
+        min-width: 70px;
+        background: transparent !important;
+    }
+    
+    .favorites-nav-buttons .tab-button i {
+        font-size: 24px;
+        margin-bottom: 6px;
+        color: #999;
+        transition: color 0.2s ease;
+    }
+    
+    .favorites-nav-buttons .tab-button span {
+        font-size: 12px;
+        display: block;
+        text-align: center;
+        color: #999;
+        transition: color 0.2s ease;
+    }
+
+    .favorites-nav-buttons .tab-button.active {
+        background: transparent !important;
+    }
+
+    .favorites-nav-buttons .tab-button.active i,
+    .favorites-nav-buttons .tab-button.active span {
+        color: var(--orange-main-color);
+    }
+
+    .favorites-nav-buttons .tab-button:hover:not(.active) {
+        background: transparent !important;
+    }
+
+    .favorites-nav-buttons .tab-button:hover:not(.active) i,
+    .favorites-nav-buttons .tab-button:hover:not(.active) span {
+        color: var(--orange-hover-color);
+    }
 }
 
 .favorites-section {
@@ -101,3 +153,15 @@ gap: 10px;
     color: #4b5563;
     font-weight: 500;
 }
+
+#viewFavoritesBtn.active {
+    background: var(--orange-main-color);
+    color: white;
+    border-color: var(--orange-main-color);
+}
+
+#viewFavoritesBtn.active:hover {
+    background: var(--orange-hover-color);
+}
+
+/* Remove conflicting bottom sheet tabs styles */

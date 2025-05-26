@@ -152,103 +152,84 @@ button:disabled {
 /* כפתורי טאבים (Tabs) - סגנון בסיסי */
 .bottom-sheet-tabs-container {
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 10px 20px;
-    margin-bottom: 15px;
-    overflow-x: auto;
-    gap: 12px;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0;
+    gap: 0;
 }
 
-.tab-button {
-    background: transparent;
-    border: 1px solid #e5e7eb;
-    color: #666;
-    box-shadow: none;
-    border-radius: 8px;
-    padding: 12px;
-    min-width: 100px;
+.bottom-sheet-tabs-container .tab-button {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
+    padding: 12px 8px;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    box-shadow: none;
+    color: #666;
     transition: all 0.2s ease;
 }
 
-.tab-button i {
-    font-size: 18px;
+.bottom-sheet-tabs-container .tab-button i {
+    font-size: 20px;
+    margin: 0;
 }
 
-.tab-button .tab-text {
-    font-size: 13px;
-    font-weight: 500;
+.bottom-sheet-tabs-container .tab-button .tab-text {
+    font-size: 12px;
+    margin: 0;
+    text-align: center;
+    white-space: nowrap;
 }
 
-.tab-button:hover:not(.active) {
-    background: #f8f9fa;
-    border-color: #ddd;
+.bottom-sheet-tabs-container .tab-button:hover {
+    color: var(--orange-light-color);
+    background: transparent;
 }
 
-.tab-button.active {
-    background: var(--orange-main-color);
-    color: white;
-    border-color: var(--orange-main-color);
-}
-
-.tab-button.active .tab-text {
-    color: white;
+.bottom-sheet-tabs-container .tab-button.active {
+    color: var(--orange-main-color);
+    border-bottom-color: var(--orange-main-color);
+    background: transparent;
 }
 
 /* מצב מובייל */
 @media (max-width: 600px) {
     .bottom-sheet-tabs-container {
-        padding: 12px;
-        gap: 20px;
-        background: transparent;
+        padding: 0;
+        gap: 0;
     }
 
-    .tab-button {
-        padding: 8px 4px;
-        min-width: 70px;
+    .bottom-sheet-tabs-container .tab-button {
+        padding: 12px 4px;
         border: none;
-        background: transparent !important; /* חשוב להוסיף !important */
     }
     
-    .tab-button i {
-        font-size: 24px;
-        margin-bottom: 6px;
-        color: #999; /* צבע אפור בהיר יותר לאייקון לא פעיל */
-        transition: color 0.2s ease;
+    .bottom-sheet-tabs-container .tab-button i {
+        font-size: 22px;
+        color: #666;
     }
     
-    .tab-button .tab-text {
-        font-size: 12px;
-        display: block;
-        text-align: center;
-        color: #999; /* צבע אפור בהיר יותר לטקסט לא פעיל */
-        transition: color 0.2s ease;
+    .bottom-sheet-tabs-container .tab-button .tab-text {
+        font-size: 11px;
+        color: #666;
     }
 
-    .tab-button.active {
-        background: transparent !important; /* חשוב להוסיף !important */
-        border: none;
-        box-shadow: none;
+    .bottom-sheet-tabs-container .tab-button.active i,
+    .bottom-sheet-tabs-container .tab-button.active .tab-text {
+        color: var(--orange-main-color);
     }
 
-    .tab-button.active i,
-    .tab-button.active .tab-text {
-        color: var(--orange-main-color); /* צבע כתום לאייקון ולטקסט במצב פעיל */
-    }
-
-    /* ביטול כל הסגנונות הקודמים במצב מובייל */
-    .tab-button:hover:not(.active),
-    .tab-button.active,
-    .tab-button:hover {
-        background: transparent !important;
-        border: none;
-        box-shadow: none;
+    .bottom-sheet-tabs-container .tab-button:hover:not(.active) i,
+    .bottom-sheet-tabs-container .tab-button:hover:not(.active) .tab-text {
+        color: var(--orange-light-color);
     }
 }
 
@@ -414,4 +395,76 @@ button:disabled {
     font-size: 14px;
     color: #666;
     text-align: center;
+}
+
+/* Top Navigation Buttons */
+.top-nav-button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #666;
+    min-width: 100px;
+    flex: 1;
+    transition: all 0.2s ease;
+}
+
+.top-nav-button i {
+    font-size: 18px;
+}
+
+.top-nav-button span {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.top-nav-button:hover:not(.active) {
+    background: #f8f9fa;
+    border-color: #ddd;
+}
+
+.top-nav-button.active {
+    background: var(--orange-main-color);
+    color: white;
+    border-color: var(--orange-main-color);
+}
+
+.top-nav-button.active span {
+    color: white;
+}
+
+@media (max-width: 600px) {
+    .top-nav-button {
+        flex-direction: column;
+        padding: 8px 4px;
+        min-width: 70px;
+        border: none;
+        background: transparent !important;
+    }
+    
+    .top-nav-button i {
+        font-size: 24px;
+        margin-bottom: 6px;
+        color: #999;
+    }
+    
+    .top-nav-button span {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .top-nav-button.active {
+        background: transparent !important;
+        border: none;
+    }
+
+    .top-nav-button.active i,
+    .top-nav-button.active span {
+        color: var(--orange-main-color);
+    }
 }

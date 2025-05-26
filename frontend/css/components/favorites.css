@@ -1,0 +1,19 @@
+.favorites-nav-button {
+    background: var(--orange-main-color) !important;
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.favorites-nav-button:hover {
+    background: var(--orange-hover-color) !important;
+}
+
+.favorites-nav-button.active {
+    background: var(--orange-main-color) !important;
+    color: white;
+} 
