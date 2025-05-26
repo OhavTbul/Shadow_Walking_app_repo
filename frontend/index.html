@@ -157,6 +157,7 @@
                                 New Comparison
                             </button>
                         </div>
+                        <p class="perfect-routes-message">We found 4 perfect routes for you</p>
                         <div id="comparisonStatsDisplay" class="comparison-results">
                             <div class="route-info-section">
                                 <p class="shade-preference">Shade Preference: <span>...</span></p>
@@ -174,16 +175,29 @@
             <div id="futureTabContent" class="tab-content hidden">
                  <div id="futurePlanningSection" class="control-section">
                     <h3>Future Route Plan</h3>
-                    <div>
-                        <label for="futureDate">Date:</label>
-                        <input type="date" id="futureDate" class="sheet-input">
+                    <div class="future-inputs">
+                        <div class="date-input-group">
+                            <label for="futureDate">Date:</label>
+                            <input type="date" id="futureDate" class="sheet-input">
+                            <i class="fas fa-calendar input-icon"></i>
+                        </div>
+                        <div class="time-input-group">
+                            <label for="futureTime">Time:</label>
+                            <input type="time" id="futureTime" step="900" class="sheet-input">
+                            <i class="fas fa-clock input-icon"></i>
+                        </div>
                     </div>
-                    <div style="margin-top: 8px;">
-                        <label for="futureTime">Time:</label> <input type="time" id="futureTime" step="900" class="sheet-input">
+                    <div class="future-actions">
+                        <button id="applyFuturePlanBtn" class="route-step-btn">
+                            <i class="fas fa-play"></i>
+                            <span>Show Future</span>
+                        </button>
+                        <button id="resetToNowBtn" class="route-step-btn danger-text" style="display:none;">
+                            <i class="fas fa-rotate-left"></i>
+                            <span>Reset Time</span>
+                        </button>
                     </div>
-                    <button id="applyFuturePlanBtn" class="sheet-button" style="margin-top: 10px;">Show Future Shadows</button>
-                    <button id="resetToNowBtn" class="sheet-button danger-btn" style="margin-top: 10px; display:none;">Reset to Current Time</button>
-                    <p id="planningStatus" style="font-size: 0.9em; color: var(--text-primary); margin-top: 8px;"></p>
+                    <p id="planningStatus" class="planning-status"></p>
                 </div>
             </div>
 

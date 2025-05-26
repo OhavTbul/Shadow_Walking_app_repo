@@ -128,6 +128,80 @@ input[type=range]::-webkit-slider-thumb:hover {
     color: var(--primary-color); /* <--- אפשר לשנות ל-var(--orange-text-color) או var(--orange-main-color) */
 }
 
+.future-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.date-input-group,
+.time-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-icon {
+    color: var(--orange-main-color);
+    font-size: 18px;
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+}
+
+.sheet-input {
+    padding-right: 35px; /* Space for icon */
+    width: 100%;
+    height: 40px;
+    border: 1px solid var(--orange-border-color);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.future-actions {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 20px 0;
+}
+
+.future-actions .route-step-btn {
+    min-width: 80px;
+}
+
+.future-actions .danger-text i,
+.future-actions .danger-text span {
+    color: var(--danger-color);
+}
+
+.future-actions .danger-text:hover i,
+.future-actions .danger-text:hover span {
+    color: var(--danger-hover);
+}
+
+.icon-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.icon-button i {
+    font-size: 16px;
+}
+
+.planning-status {
+    font-size: 0.9em;
+    color: var(--text-primary);
+    margin-top: 8px;
+    text-align: center;
+}
+
 @media (max-width: 600px) {
     .slider-container {
         width: 100%;
