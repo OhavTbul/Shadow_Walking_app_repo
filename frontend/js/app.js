@@ -138,11 +138,14 @@ function loginSuccess(name) {
 
   if (topBar) {
     topBar.classList.remove('hidden');
-    topBar.innerHTML = `Hello, <span class="username-display">${name}</span>!
-          <button type="button" id="logoutBtn" class="button-gradient button-auth-logout">Logout</button>`;
+    topBar.innerHTML = `<span style="color: #f4811e;">Hello, <span class="username-display">${name}</span>!</span>
+          <a href="#" id="logoutBtn" class="logout-link" style="position: absolute; right: 20px; top: 2px; color: #666; font-size: 0.75em; text-decoration: none;">Logout</a>`;
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
     }
   }
   updateUserSpecificFeatures(true);

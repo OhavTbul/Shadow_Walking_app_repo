@@ -15,7 +15,7 @@
 .auth-modal-content {
   background-color: rgba(255, 255, 255, 0.98);
   margin: 5% auto;
-  padding: 25px;
+  padding: 25px 15px;  /* Adjusted padding to balance the form padding */
   border: none;
   width: 80%;
   max-width: 450px;
@@ -41,20 +41,22 @@
 
 .auth-card form {
   margin-bottom: 20px;
+  padding: 0 35px;  /* Increased padding on both sides */
 }
 
 .auth-card input {
-  width: 100%;
+  width: 100%;  /* Set back to 100% since we're using padding on the form */
   padding: 12px;
-  margin: 6px 0;
+  margin: 8px 0;
   border: 1px solid var(--orange-border-color);
   border-radius: 10px;
   font-size: 15px;
   display: block;
+  box-sizing: border-box;  /* Add this to include padding and border in the width calculation */
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   background-color: rgba(255, 255, 255, 0.9);
-  color: var(--text-primary); /* צבע טקסט רגיל */
-  caret-color: var(--orange-main-color); /* צבע הסמן יהיה כתום */
+  color: var(--text-primary);
+  caret-color: var(--orange-main-color);
 }
 
 .auth-card input:focus {
@@ -281,4 +283,47 @@ select:focus {
     input[type=range] {
         flex: 1;
     }
+}
+
+.auth-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.auth-tabs button {
+  background: none;
+  border: none;
+  padding: 8px 0;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: none;
+  transition: color 0.2s ease;
+}
+
+.auth-tabs button:hover {
+  color: var(--orange-main-color);
+  background: none;
+  transform: none;
+}
+
+.auth-tabs button.active {
+  color: var(--orange-main-color);
+  font-weight: 500;
+  background: none;
+  box-shadow: none;
+}
+
+/* Remove any existing button styles */
+.auth-tabs .button-gradient {
+  background: none;
+  background-image: none;
+}
+
+.auth-tabs .button-gradient:hover {
+  background: none;
+  background-image: none;
+  box-shadow: none;
 }
