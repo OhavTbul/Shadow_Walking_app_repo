@@ -478,38 +478,41 @@ class MapManager {
     displayRoute(routeGeoJSON) {
         this.lastRouteData = routeGeoJSON;
 
+        // Remove existing route layer if present
+        if (this.map.getLayer('route')) {
+            this.map.removeLayer('route');
+        }
+
         const source = this.map.getSource('route');
         if (source) {
             source.setData(routeGeoJSON);
         } else {
             this.map.addSource('route', { type: 'geojson', data: routeGeoJSON });
+        }
 
-            let beforeLayerId = '3d-buildings';
-            if (!this.map.getLayer(beforeLayerId)) {
-                const layers = this.map.getStyle().layers;
-                for (let i = 0; i < layers.length; i++) {
-                    if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
-                        beforeLayerId = layers[i].id;
-                        break;
-                    }
-                }
+        // Add route layer on top of everything
+        this.map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: { 
+                'line-join': 'round', 
+                'line-cap': 'round',
+                'visibility': 'visible'
+            },
+            paint: {
+                'line-color': this.currentMapStyleKey === 'night' ? '#ffeb3b' : '#2563eb',
+                'line-width': 5,
+                'line-opacity': this.currentMapStyleKey === 'night' ? 1 : 0.85
             }
+        });
 
-            // קבע את צבע המסלול בהתאם למצב המפה
-            const routeColor = this.currentMapStyleKey === 'night' ? '#ffeb3b' : '#2563eb';
-            const routeOpacity = this.currentMapStyleKey === 'night' ? 1 : 0.85;
-
-            this.map.addLayer({
-                id: 'route',
-                type: 'line',
-                source: 'route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-color': routeColor,
-                    'line-width': 5,
-                    'line-opacity': routeOpacity
-                }
-            }, beforeLayerId);
+        // Ensure route is above all other layers
+        const layers = this.map.getStyle().layers;
+        for (const layer of layers) {
+            if (layer.id !== 'route') {
+                this.map.moveLayer('route', layer.id);
+            }
         }
 
         if (routeGeoJSON.geometry.coordinates.length > 0) {
@@ -641,8 +644,8 @@ stopShadowAutoRefresh() {
             type: 'fill',
             source: 'shadows',
             paint: {
-                'fill-color': 'rgba(0, 0, 0, 0.25)', // צל יותר עדין
-                'fill-opacity': 0.7, // שקיפות מוגברת
+                'fill-color': 'rgba(0, 0, 0, 0.35)', // darker shadow (increased from 0.25)
+                'fill-opacity': 0.8, // slightly higher opacity (increased from 0.7)
                 'fill-outline-color': 'transparent'
             }
         }, targetLayerId);
