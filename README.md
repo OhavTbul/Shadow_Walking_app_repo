@@ -8,7 +8,7 @@ A sophisticated web application that helps users find optimal walking routes bas
 - **Interactive Map Interface**: Built with MapLibre GL for smooth, responsive map interactions
 - **Real-time Shadow Visualization**: Dynamic shadow rendering based on current sun position
 - **Intelligent Route Planning**: Advanced algorithms that balance distance and shade coverage
-- **Customizable Shade Preferences**: Adjustable weight system (0.1-10.0) for shade vs. distance optimization
+- **Customizable Shade Preferences**: Adjustable weight system (1.0-10.0) for shade vs. distance optimization
 - **Future Route Planning**: Plan routes for specific dates and times
 - **Route Comparison**: Compare multiple route options with different shade preferences
 
